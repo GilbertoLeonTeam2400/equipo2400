@@ -21,36 +21,30 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
   <!-- Firebase (inicializa después de que Babel cargue) -->
-  <script type="module">
-    const cfg = {
-      apiKey: "AIzaSyDQf7ItrnYsMK9ThyMr6DRB39XvnQCwiYc",
-      authDomain: "gestion-ventas-equipo-bm-2400.firebaseapp.com",
-      projectId: "gestion-ventas-equipo-bm-2400",
-      storageBucket: "gestion-ventas-equipo-bm-2400.firebasestorage.app",
-      messagingSenderId: "396886347303",
-      appId: "1:396886347303:web:8dc1660cc079c74c2b4802"
-    };
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js")
-      .then(function(m) {
-        const app = m.initializeApp(cfg);
-        return Promise.all([
-          app,
-          import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
-        ]);
-      })
-      .then(function(results) {
-        const app = results[0];
-        const fs = results[1];
-        const db = fs.getFirestore(app);
-        window.__fbDb = db;
-        window.__fbDoc = fs.doc;
-        window.__fbSetDoc = fs.setDoc;
-        window.__fbOnSnapshot = fs.onSnapshot;
-        console.log("Firebase conectado");
-      })
-      .catch(function(e) {
-        console.warn("Firebase no disponible:", e);
-      });
+  <!-- Firebase compat SDK (funciona sin modulos) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    try {
+      const cfg = {
+        apiKey: "AIzaSyDQf7ItrnYsMK9ThyMr6DRB39XvnQCwiYc",
+        authDomain: "gestion-ventas-equipo-bm-2400.firebaseapp.com",
+        projectId: "gestion-ventas-equipo-bm-2400",
+        storageBucket: "gestion-ventas-equipo-bm-2400.firebasestorage.app",
+        messagingSenderId: "396886347303",
+        appId: "1:396886347303:web:8dc1660cc079c74c2b4802"
+      };
+      const app = firebase.initializeApp(cfg);
+      const db  = firebase.firestore();
+      // Adaptar API compat a la interfaz que usa el app
+      window.__fbDb = db;
+      window.__fbDoc = function(db, col, id) { return db.collection(col).doc(id); };
+      window.__fbSetDoc = function(ref, data, opts) { return opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data); };
+      window.__fbOnSnapshot = function(ref, onNext, onErr) { return ref.onSnapshot(onNext, onErr); };
+      console.log("Firebase conectado");
+    } catch(e) {
+      console.warn("Firebase no disponible:", e);
+    }
   </script>
 
   <!-- App principal -->
