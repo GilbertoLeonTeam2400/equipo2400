@@ -46,41 +46,7 @@
   <script>
     const { useState, useMemo, useEffect } = React;
 
-// ─────────────────────────────────────────────────────────────────
-// PASO 1: Pega aquí tus credenciales de Firebase
-// (Las obtienes en https://console.firebase.google.com →
-//  tu proyecto → ⚙️ Configuración → tu app web → firebaseConfig)
-// ─────────────────────────────────────────────────────────────────
-const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyDQf7ItrnYsMK9ThyMr6DRB39XvnQCwiYc",
-  authDomain:        "gestion-ventas-equipo-bm-2400.firebaseapp.com",
-  projectId:         "gestion-ventas-equipo-bm-2400",
-  storageBucket:     "gestion-ventas-equipo-bm-2400.firebasestorage.app",
-  messagingSenderId: "396886347303",
-  appId:             "1:396886347303:web:8dc1660cc079c74c2b4802",
-};
-// ─────────────────────────────────────────────────────────────────
-
-// Inicializar Firebase cuando el componente carga (via CDN scripts en el HTML)
-// El HTML que hostea este componente debe incluir ANTES del bundle:
-//
-//   <script type="module">
-//     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-//     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-//     const hasCredentials = !Object.values(window.__FIREBASE_CONFIG__).some(v => v.startsWith("PEGA_"));
-//     if (hasCredentials) {
-//       const app = initializeApp(window.__FIREBASE_CONFIG__);
-//       const db  = getFirestore(app);
-//       window.__fbDb          = db;
-//       window.__fbDoc         = doc;
-//       window.__fbSetDoc      = setDoc;
-//       window.__fbOnSnapshot  = onSnapshot;
-//     }
-//   </script>
-//
-// El archivo equipo2400-produccion.html (que se genera junto a este JSX) incluye todo eso automáticamente.
-
-const db = null; // Solo para compatibilidad con StatusFirebase
+const db = null;
 
 const CONDOR_B64 = [
   "iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAYAAACLz2ctAABIrklEQVR42u2d",
