@@ -40,7 +40,16 @@
       window.__fbDb = db;
       window.__fbDoc = function(db, col, id) { return db.collection(col).doc(id); };
       window.__fbSetDoc = function(ref, data, opts) { return opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data); };
-      window.__fbOnSnapshot = function(ref, onNext, onErr) { return ref.onSnapshot(onNext, onErr); };
+      window.__fbOnSnapshot = function(ref, onNext, onErr) {
+        return ref.onSnapshot(function(snap) {
+          // Normalizar snapshot para que funcione igual que modular SDK
+          var normalized = {
+            exists: function() { return snap.exists; },
+            data: function() { return snap.data(); }
+          };
+          onNext(normalized);
+        }, onErr);
+      };
       console.log("Firebase conectado");
     } catch(e) {
       console.warn("Firebase no disponible:", e);
