@@ -2340,157 +2340,292 @@ function ProdEditableInner({ v, equipo, setEquipo, guardarProductividad, guardan
 
 // ── Editor de datos supervisor ────────────────────────────────────
 function EditarDatosView({ equipo, setEquipo, info }) {
-  const TODAY = new Date().toLocaleDateString("es-CL",{day:"numeric",month:"numeric",year:"numeric"});
   const RD = "#C41230", R = "#E9192A";
-  const [editVid,  setEditVid]  = React.useState("");
-  const [saving,   setSaving]   = React.useState(false);
-  const [saved,    setSaved]    = React.useState(false);
-  const [localUF,  setLocalUF]  = React.useState(0);
-  const [localDPS, setLocalDPS] = React.useState(0);
-  const [localCon, setLocalCon] = React.useState(0);
-  const [localHom, setLocalHom] = React.useState(0);
-  const [localMuj, setLocalMuj] = React.useState(0);
-  const [localMeta,setLocalMeta]= React.useState(0);
-  const vSel = equipo.find(function(e){return String(e.id)===editVid;});
+  const [editVid,    setEditVid]    = React.useState("");
+  const [mesEditando, setMesEditando] = React.useState(null); // {key, label, data}
+  const [saving,     setSaving]     = React.useState(false);
+  const [saved,      setSaved]      = React.useState(false);
 
-  function onSelectEjec(newVid) {
-    setEditVid(newVid);
-    const v2 = equipo.find(function(e){return String(e.id)===newVid;});
-    if (v2) {
-      const rep = v2.rep || [];
-      setLocalUF(v2.uf); setLocalDPS(v2.dps);
-      setLocalCon(rep.reduce(function(s,r){return s+(r.conecta||0);},0));
-      setLocalHom(rep.reduce(function(s,r){return s+(r.hombres||0);},0));
-      setLocalMuj(rep.reduce(function(s,r){return s+(r.mujeres||0);},0));
-      setLocalMeta(v2.metaUF);
+  // Campos del mes en edición
+  const [localUF,   setLocalUF]   = React.useState(0);
+  const [localDPS,  setLocalDPS]  = React.useState(0);
+  const [localCon,  setLocalCon]  = React.useState(0);
+  const [localHom,  setLocalHom]  = React.useState(0);
+  const [localMuj,  setLocalMuj]  = React.useState(0);
+  const [localMeta, setLocalMeta] = React.useState(0);
+
+  const vSel = equipo.find(function(e){ return String(e.id) === editVid; });
+
+  // Generar todos los meses del año en curso
+  function getMesesAnio() {
+    const now = new Date();
+    const anio = now.getFullYear();
+    const meses = [];
+    for (var m = 0; m < 12; m++) {
+      const d = new Date(anio, m, 1);
+      const key = anio + "-" + String(m + 1).padStart(2, "0");
+      const lbl = d.toLocaleString("es-CL", { month: "long", year: "numeric" });
+      const esCurrent = m === now.getMonth();
+      meses.push({ key: key, label: lbl, mes: m, esCurrent: esCurrent });
     }
+    return meses;
+  }
+
+  // Calcular estadísticas de un mes para el ejecutivo seleccionado
+  // Mes actual: usar v.uf, v.dps, v.rep
+  // Meses anteriores: usar datos guardados en Firebase (por ahora usamos lo que hay en rep)
+  function getStatsMes(v, mesKey) {
+    if (!v) return { uf: 0, dps: 0, conecta: 0, hombres: 0, mujeres: 0, meta: v ? v.metaUF : 0 };
+    if (mesKey === info.mesKey) {
+      // Mes actual - usar estado en tiempo real
+      return {
+        uf:      v.uf,
+        dps:     v.dps,
+        conecta: v.rep.reduce(function(s,r){ return s + (r.conecta||0); }, 0),
+        hombres: v.rep.reduce(function(s,r){ return s + (r.hombres||0); }, 0),
+        mujeres: v.rep.reduce(function(s,r){ return s + (r.mujeres||0); }, 0),
+        meta:    v.metaUF,
+      };
+    }
+    // Meses anteriores - usar historial guardado en v.historial si existe
+    var hist = v.historial && v.historial[mesKey];
+    if (hist) return { uf: hist.uf||0, dps: hist.dps||0, conecta: hist.conecta||0, hombres: hist.hombres||0, mujeres: hist.mujeres||0, meta: hist.meta||v.metaUF };
+    return { uf: 0, dps: 0, conecta: 0, hombres: 0, mujeres: 0, meta: v.metaUF };
+  }
+
+  function abrirEdicion(mesObj) {
+    if (!vSel) return;
+    var stats = getStatsMes(vSel, mesObj.key);
+    setLocalUF(stats.uf);
+    setLocalDPS(stats.dps);
+    setLocalCon(stats.conecta);
+    setLocalHom(stats.hombres);
+    setLocalMuj(stats.mujeres);
+    setLocalMeta(stats.meta);
+    setMesEditando(mesObj);
     setSaved(false);
   }
 
   function guardarEdicion() {
-    if (!vSel) return;
+    if (!vSel || !mesEditando) return;
     setSaving(true);
+    var esMesActual = mesEditando.key === info.mesKey;
     setEquipo(function(prev) {
-      return prev.map(function(eq){
+      return prev.map(function(eq) {
         if (String(eq.id) !== editVid) return eq;
-        var rep = eq.rep.length>0 ? eq.rep.slice() : [{fecha:TODAY,contactos:0,cot:0,cierres:0,uf:0,dps:0,nota:"Ajuste supervisor",hombres:0,mujeres:0,conecta:0}];
-        var acum = function(campo) { return rep.slice(0,-1).reduce(function(s,r){return s+(r[campo]||0);},0); };
-        var ultimo = Object.assign({}, rep[rep.length-1]);
-        ultimo.uf      = Math.max(0, parseFloat(localUF)  - acum("uf"));
-        ultimo.dps     = Math.max(0, parseInt(localDPS)   - acum("dps"));
-        ultimo.conecta = Math.max(0, parseInt(localCon)   - acum("conecta"));
-        ultimo.hombres = Math.max(0, parseInt(localHom)   - acum("hombres"));
-        ultimo.mujeres = Math.max(0, parseInt(localMuj)   - acum("mujeres"));
-        rep[rep.length-1] = ultimo;
-        return Object.assign({}, eq, {rep:rep, uf:parseFloat(parseFloat(localUF).toFixed(2)), dps:parseInt(localDPS), metaUF:parseFloat(localMeta)||eq.metaUF});
+        if (esMesActual) {
+          // Mes actual: actualizar rep y totales
+          var rep = eq.rep.length > 0 ? eq.rep.slice() : [{ fecha: new Date().toLocaleDateString("es-CL"), contactos:0,cot:0,cierres:0,uf:0,dps:0,nota:"Ajuste supervisor",hombres:0,mujeres:0,conecta:0 }];
+          var acum = function(campo) { return rep.slice(0,-1).reduce(function(s,r){ return s+(r[campo]||0); }, 0); };
+          var ultimo = Object.assign({}, rep[rep.length-1]);
+          ultimo.uf      = Math.max(0, parseFloat(localUF)  - acum("uf"));
+          ultimo.dps     = Math.max(0, parseInt(localDPS)   - acum("dps"));
+          ultimo.conecta = Math.max(0, parseInt(localCon)   - acum("conecta"));
+          ultimo.hombres = Math.max(0, parseInt(localHom)   - acum("hombres"));
+          ultimo.mujeres = Math.max(0, parseInt(localMuj)   - acum("mujeres"));
+          rep[rep.length-1] = ultimo;
+          return Object.assign({}, eq, {
+            rep: rep,
+            uf:  parseFloat(parseFloat(localUF).toFixed(2)),
+            dps: parseInt(localDPS),
+            metaUF: parseFloat(localMeta) || eq.metaUF,
+          });
+        } else {
+          // Mes anterior: guardar en v.historial[mesKey]
+          var hist = Object.assign({}, eq.historial || {});
+          hist[mesEditando.key] = {
+            uf:      parseFloat(parseFloat(localUF).toFixed(2)),
+            dps:     parseInt(localDPS),
+            conecta: parseInt(localCon),
+            hombres: parseInt(localHom),
+            mujeres: parseInt(localMuj),
+            meta:    parseFloat(localMeta) || eq.metaUF,
+            label:   mesEditando.label,
+          };
+          return Object.assign({}, eq, { historial: hist, metaUF: parseFloat(localMeta)||eq.metaUF });
+        }
       });
     });
-    setTimeout(function(){ setSaving(false); setSaved(true); setTimeout(function(){setSaved(false);},3000); }, 600);
+    setTimeout(function() {
+      setSaving(false);
+      setSaved(true);
+      setTimeout(function() { setSaved(false); setMesEditando(null); }, 2000);
+    }, 600);
   }
 
-  const pctH    = localHom+localMuj>0 ? Math.round((localHom/(localHom+localMuj))*100) : 0;
-  const pctM    = localHom+localMuj>0 ? Math.round((localMuj/(localHom+localMuj))*100) : 0;
-  const pctMeta = localMeta>0 ? Math.round((localUF/localMeta)*100) : 0;
-  const INP     = {fontSize:28,fontWeight:900,border:"none",background:"transparent",outline:"none",width:"100%"};
+  var meses = getMesesAnio();
+  var now = new Date();
+  var pctH = localHom+localMuj>0 ? Math.round((localHom/(localHom+localMuj))*100) : 0;
+  var pctM = localHom+localMuj>0 ? Math.round((localMuj/(localHom+localMuj))*100) : 0;
+  var pctMeta = localMeta>0 ? Math.round((localUF/localMeta)*100) : 0;
+  var INP = { fontSize:24,fontWeight:900,border:"none",background:"transparent",outline:"none",width:"100%" };
 
   return (
-    React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2352}}
-      , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2353}}, "✏️ Editar estadísticas de ejecutivo"    )
-      , React.createElement('div', { style: {fontSize:12,color:"#9CA3AF",marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2354}}, "Selecciona un ejecutivo y corrige sus indicadores. Los cambios se guardan automáticamente en Firebase."             )
-      , React.createElement('div', { style: {marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2355}}
-        , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2356}}, "Seleccionar ejecutivo" )
-        , React.createElement('select', { value: editVid, onChange: function(e){onSelectEjec(e.target.value);}, style: {width:"100%",padding:"12px 14px",borderRadius:12,border:"1.5px solid rgba(233,7,41,.2)",fontSize:14,background:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2357}}
-          , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 2358}}, "— Selecciona un ejecutivo —"    )
-          , equipo.map(function(v){return React.createElement('option', { key: v.id, value: String(v.id), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2359}}, v.nombre);})
+    React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2419}}
+      , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2420}}, "✏️ Editar estadísticas de ejecutivo"    )
+      , React.createElement('div', { style: {fontSize:12,color:"#9CA3AF",marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2421}}, "Selecciona un ejecutivo, luego haz clic en cualquier mes para editar sus datos."            )
+
+      /* Selector ejecutivo */
+      , React.createElement('div', { style: {marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2424}}
+        , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2425}}, "Ejecutivo")
+        , React.createElement('select', { value: editVid, onChange: function(e){ setEditVid(e.target.value); setMesEditando(null); setSaved(false); },
+          style: {width:"100%",padding:"12px 14px",borderRadius:12,border:"1.5px solid rgba(233,7,41,.2)",fontSize:14,background:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2426}}
+          , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 2428}}, "— Selecciona un ejecutivo —"    )
+          , equipo.map(function(v){ return React.createElement('option', { key: v.id, value: String(v.id), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2429}}, v.nombre); })
         )
       )
-      , vSel && (
-        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2363}}
-          , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2364}}
-            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#F8FAFC",borderRadius:12,padding:"14px 16px",border:"2px solid #374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2365}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#374151",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2366}}, "🎯 Meta mensual UF (solo supervisor)"     )
-              , React.createElement('input', { type: "number", step: "0.5", min: "0", value: localMeta, onChange: function(e){setLocalMeta(parseFloat(e.target.value)||0);}, style: Object.assign({},INP,{color:"#374151",fontSize:36}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2367}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#6B7280",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2368}}, "Meta del mes para este ejecutivo"     )
+
+      /* Recuadros de meses */
+      , vSel && !mesEditando && (
+        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2435}}
+          , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:RD,marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2436}}, "Haz clic en un mes para editar sus estadísticas:"        )
+          , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2437}}
+            , meses.map(function(m) {
+              var stats = getStatsMes(vSel, m.key);
+              var esFuturo = m.mes > now.getMonth();
+              var pct = stats.meta > 0 ? Math.round((stats.uf / stats.meta) * 100) : 0;
+              var col = pct >= 100 ? "#16A34A" : pct >= 60 ? "#D97706" : pct > 0 ? "#DC2626" : "#9CA3AF";
+              var totT = stats.hombres + stats.mujeres;
+              var pH = totT > 0 ? Math.round((stats.hombres/totT)*100) : 0;
+              var pM = totT > 0 ? Math.round((stats.mujeres/totT)*100) : 0;
+              return (
+                React.createElement('div', { key: m.key,
+                  onClick: function(){ if (!esFuturo) abrirEdicion(m); },
+                  style: {
+                    background: m.esCurrent ? "#FFF5F6" : esFuturo ? "#F8FAFC" : "#fff",
+                    borderRadius:12,
+                    padding:"14px 14px",
+                    border: m.esCurrent ? "2px solid "+RD : "1.5px solid #E5E7EB",
+                    cursor: esFuturo ? "default" : "pointer",
+                    opacity: esFuturo ? 0.5 : 1,
+                    transition:"box-shadow .15s",
+                    boxShadow: m.esCurrent ? "0 4px 16px rgba(233,7,41,.12)" : "none",
+                  }, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2447}}
+                  , React.createElement('div', { style: {fontSize:11,fontWeight:700,color: m.esCurrent ? RD : "#374151",marginBottom:6,textTransform:"capitalize"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2459}}
+                    , m.label.split(" ")[0], " " , m.esCurrent ? "⬅ actual" : ""
+                  )
+                  , esFuturo ? (
+                    React.createElement('div', { style: {fontSize:12,color:"#9CA3AF"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2463}}, "Próximo")
+                  ) : (
+                    React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2465}}
+                      , React.createElement('div', { style: {fontSize:22,fontWeight:900,color:col,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2466}}, stats.uf.toFixed(1))
+                      , React.createElement('div', { style: {fontSize:10,color:"#9CA3AF",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2467}}, "UF de "  , stats.meta)
+                      , React.createElement('div', { style: {background:"#E5E7EB",borderRadius:99,height:4,overflow:"hidden",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2468}}
+                        , React.createElement('div', { style: {width:Math.min(pct,100)+"%",height:"100%",background:col,borderRadius:99}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2469}} )
+                      )
+                      , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:10,color:"#6B7280"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2471}}
+                        , React.createElement('span', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2472}}, "DPS: " , stats.dps)
+                        , React.createElement('span', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2473}}, "H:", pH, "% M:" , pM, "%")
+                      )
+                      , React.createElement('div', { style: {fontSize:10,color:"#059669",marginTop:2}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2475}}, "Conecta: " , stats.conecta)
+                      , React.createElement('div', { style: {fontSize:10,color:"#3B82F6",marginTop:4,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2476}}, "✏️ Clic para editar"   )
+                    )
+                  )
+                )
+              );
+            })
+          )
+        )
+      )
+
+      /* Formulario de edición del mes seleccionado */
+      , vSel && mesEditando && (
+        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2488}}
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12,marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2489}}
+            , React.createElement('button', { onClick: function(){ setMesEditando(null); setSaved(false); },
+              style: {background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,padding:"8px 14px",fontSize:13,cursor:"pointer",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2490}}, "← Volver"
+
             )
-            , React.createElement('div', { style: {background:"#FFFBEB",borderRadius:12,padding:"14px 16px",border:"1.5px solid #FDE68A"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2370}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#D97706",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2371}}, "UF cerradas" )
-              , React.createElement('input', { type: "number", step: "0.1", min: "0", value: localUF, onChange: function(e){setLocalUF(parseFloat(e.target.value)||0);}, style: Object.assign({},INP,{color:"#D97706"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2372}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#92400E",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2373}}, pctMeta, "% de la meta"   )
+            , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2494}}
+              , React.createElement('div', { style: {fontSize:16,fontWeight:900,color:RD,textTransform:"capitalize"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2495}}, mesEditando.label)
+              , React.createElement('div', { style: {fontSize:11,color:"#9CA3AF"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2496}}, vSel.nombre)
             )
-            , React.createElement('div', { style: {background:"#F0FDF4",borderRadius:12,padding:"14px 16px",border:"1.5px solid #86EFAC"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2375}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#16A34A",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2376}}, "DPS realizadas" )
-              , React.createElement('input', { type: "number", min: "0", value: localDPS, onChange: function(e){setLocalDPS(parseInt(e.target.value)||0);}, style: Object.assign({},INP,{color:"#16A34A"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2377}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#166534",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2378}}, "Total del mes"  )
+            , mesEditando.esCurrent && React.createElement('div', { style: {background:"#FFF5F6",color:RD,border:"1px solid rgba(233,7,41,.2)",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2498}}, "Mes actual" )
+          )
+
+          , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2501}}
+
+            /* Meta */
+            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#F8FAFC",borderRadius:12,padding:"14px 16px",border:"2px solid #374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2504}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#374151",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2505}}, "🎯 Meta mensual UF"   )
+              , React.createElement('input', { type: "number", step: "0.5", min: "0", value: localMeta,
+                onChange: function(e){ setLocalMeta(parseFloat(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#374151",fontSize:32}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2506}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#6B7280",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2509}}, "Meta individual de este ejecutivo para "      , mesEditando.label)
             )
-            , React.createElement('div', { style: {background:"#ECFDF5",borderRadius:12,padding:"14px 16px",border:"1.5px solid #6EE7B7"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2380}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#059669",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2381}}, "Planes Conecta" )
-              , React.createElement('input', { type: "number", min: "0", value: localCon, onChange: function(e){setLocalCon(parseInt(e.target.value)||0);}, style: Object.assign({},INP,{color:"#059669"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2382}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#065F46",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2383}}, "Total del mes"  )
+
+            /* UF */
+            , React.createElement('div', { style: {background:"#FFFBEB",borderRadius:12,padding:"14px 16px",border:"1.5px solid #FDE68A"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2513}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#D97706",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2514}}, "UF cerradas" )
+              , React.createElement('input', { type: "number", step: "0.1", min: "0", value: localUF,
+                onChange: function(e){ setLocalUF(parseFloat(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#D97706"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2515}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#92400E",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2518}}, pctMeta, "% de la meta"   )
             )
-            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#EFF6FF",borderRadius:12,padding:"14px 16px",border:"2px solid #1D4ED8"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2385}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2386}}, "🏆 Titulares Hombre"  )
-              , React.createElement('input', { type: "number", min: "0", value: localHom, onChange: function(e){setLocalHom(parseInt(e.target.value)||0);}, style: Object.assign({},INP,{color:"#1D4ED8",fontSize:36}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2387}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#1e3a8a",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2388}}, pctH, "% del total — "    , localHom+localMuj, " totales" )
+
+            /* DPS */
+            , React.createElement('div', { style: {background:"#F0FDF4",borderRadius:12,padding:"14px 16px",border:"1.5px solid #86EFAC"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2522}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#16A34A",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2523}}, "DPS realizadas" )
+              , React.createElement('input', { type: "number", min: "0", value: localDPS,
+                onChange: function(e){ setLocalDPS(parseInt(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#16A34A"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2524}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#166534",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2527}}, "Total del mes"  )
             )
-            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#FDF2F8",borderRadius:12,padding:"14px 16px",border:"1.5px solid #F9A8D4"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2390}}
-              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#9D174D",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2391}}, "Titulares Mujer" )
-              , React.createElement('input', { type: "number", min: "0", value: localMuj, onChange: function(e){setLocalMuj(parseInt(e.target.value)||0);}, style: Object.assign({},INP,{color:"#9D174D"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2392}} )
-              , React.createElement('div', { style: {fontSize:10,color:"#831843",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2393}}, pctM, "% del total"  )
+
+            /* Conecta */
+            , React.createElement('div', { style: {background:"#ECFDF5",borderRadius:12,padding:"14px 16px",border:"1.5px solid #6EE7B7"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2531}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#059669",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2532}}, "Planes Conecta" )
+              , React.createElement('input', { type: "number", min: "0", value: localCon,
+                onChange: function(e){ setLocalCon(parseInt(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#059669"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2533}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#065F46",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2536}}, "Total del mes"  )
+            )
+
+            /* Hombre */
+            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#EFF6FF",borderRadius:12,padding:"14px 16px",border:"2px solid #1D4ED8"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2540}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2541}}, "🏆 Titulares Hombre"  )
+              , React.createElement('input', { type: "number", min: "0", value: localHom,
+                onChange: function(e){ setLocalHom(parseInt(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#1D4ED8",fontSize:32}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2542}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#1e3a8a",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2545}}, pctH, "% — "  , localHom+localMuj, " totales" )
+            )
+
+            /* Mujer */
+            , React.createElement('div', { style: {gridColumn:"1/-1",background:"#FDF2F8",borderRadius:12,padding:"14px 16px",border:"1.5px solid #F9A8D4"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2549}}
+              , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#9D174D",marginBottom:6,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2550}}, "Titulares Mujer" )
+              , React.createElement('input', { type: "number", min: "0", value: localMuj,
+                onChange: function(e){ setLocalMuj(parseInt(e.target.value)||0); },
+                style: Object.assign({},INP,{color:"#9D174D"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 2551}} )
+              , React.createElement('div', { style: {fontSize:10,color:"#831843",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2554}}, pctM, "% del total"  )
             )
           )
-          , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:12,padding:"14px 16px",border:"1px solid #E5E7EB",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2396}}
-            , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2397}}, "Vista previa tras guardar"   )
-            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2398}}
-              , [{l:"UF",v:parseFloat(localUF).toFixed(1),c:"#D97706"},{l:"% Meta",v:pctMeta+"%",c:pctMeta>=100?"#16A34A":"#DC2626"},{l:"DPS",v:localDPS,c:"#16A34A"},{l:"Conecta",v:localCon,c:"#059669"},{l:"Hombre",v:localHom+" ("+pctH+"%)",c:"#1D4ED8"},{l:"Mujer",v:localMuj+" ("+pctM+"%)",c:"#9D174D"}].map(function(k){
-                return React.createElement('div', { key: k.l, style: {textAlign:"center",background:"#fff",borderRadius:8,padding:"8px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2400}}, React.createElement('div', { style: {fontSize:16,fontWeight:900,color:k.c}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2400}}, k.v), React.createElement('div', { style: {fontSize:10,color:"#9CA3AF"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2400}}, k.l));
+
+          /* Vista previa */
+          , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:12,padding:"14px 16px",border:"1px solid #E5E7EB",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2559}}
+            , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2560}}, "Vista previa" )
+            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2561}}
+              , [
+                {l:"UF",     v:parseFloat(localUF).toFixed(1), c:"#D97706"},
+                {l:"% Meta", v:pctMeta+"%",                     c:pctMeta>=100?"#16A34A":"#DC2626"},
+                {l:"DPS",    v:localDPS,                        c:"#16A34A"},
+                {l:"Conecta",v:localCon,                        c:"#059669"},
+                {l:"Hombre", v:localHom+" ("+pctH+"%)",         c:"#1D4ED8"},
+                {l:"Mujer",  v:localMuj+" ("+pctM+"%)",         c:"#9D174D"},
+              ].map(function(k){
+                return React.createElement('div', { key: k.l, style: {textAlign:"center",background:"#fff",borderRadius:8,padding:"8px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2570}}
+                  , React.createElement('div', { style: {fontSize:15,fontWeight:900,color:k.c}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2571}}, k.v)
+                  , React.createElement('div', { style: {fontSize:10,color:"#9CA3AF"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2572}}, k.l)
+                );
               })
             )
           )
-          , React.createElement('button', { onClick: guardarEdicion, style: {width:"100%",padding:"16px",background:saved?"#16A34A":saving?"#9CA3AF":RD,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",transition:"background .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2404}}
-            , saved?"✅ ¡Guardado! El dashboard ya refleja los cambios":saving?"⏳ Guardando...":"💾 Guardar corrección"
+
+          , React.createElement('button', { onClick: guardarEdicion,
+            style: {width:"100%",padding:"16px",background:saved?"#16A34A":saving?"#9CA3AF":RD,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",transition:"background .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2578}}
+            , saved?"✅ ¡Guardado! Volviendo a la vista general...":saving?"⏳ Guardando...":"💾 Guardar " + mesEditando.label
           )
         )
       )
-    )
-  );
-}
-
-
-// ── Top 5 Badge ───────────────────────────────────────────────────
-function Top5Badge({ nombre }) {
-  const anioActual = new Date().getFullYear();
-  const veces = (typeof HALL_MESES !== "undefined" ? HALL_MESES : []).filter(function(m){
-    const labelAnio = parseInt((m.label||"").split(" ").pop());
-    return labelAnio === anioActual && m.top && m.top.slice(0,5).some(function(t){
-      return t.nombre && t.nombre.toUpperCase() === nombre.toUpperCase();
-    });
-  }).length;
-  const msgs = ["¡Vamos CRACK, tú puedes! 💪","¡Ya empezaste a brillar! ⭐","¡Buen comienzo, sigue así! 🔥","¡En racha, no te detengas! 🚀","¡Increíble constancia! 🏅","¡5 veces en el TOP — eres una máquina! 💥","¡Imparable! El equipo te admira 🦅","¡7 meses TOP — esto es élite! 🌟","¡Leyenda en construcción! 👑","¡9 meses TOP — histórico! 🏆","¡Casi perfecto — el equipo te necesita así! 🥇","¡11 meses TOP — CRACK del año! 💎","¡PERFECTO — 12/12 — LEYENDA ABSOLUTA! 🏆🔥👑"];
-  const color = veces===0?"#9CA3AF":veces<=3?"#D97706":"#C41230";
-  const bg    = veces===0?"#F8FAFC":veces<=3?"#FFFBEB":"#FFF5F6";
-  const brd   = veces===0?"#E5E7EB":veces<=3?"#FDE68A":"rgba(233,7,41,.2)";
-  return (
-    React.createElement('div', { style: {background:bg,borderRadius:16,padding:"18px 20px",border:"2px solid "+brd,marginBottom:16,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2428}}
-      , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2429}}, "Top 5 del mes — año "      , anioActual)
-      , React.createElement('div', { style: {fontSize:64,fontWeight:900,color:"#D4A017",lineHeight:1,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2430}}, veces)
-      , React.createElement('div', { style: {fontSize:11,color:"#9CA3AF",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2431}}, "de 12 posibles"  )
-      , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:color,lineHeight:1.4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2432}}, msgs[Math.min(veces,12)])
-    )
-  );
-}
-
-// ── Top 5 Lookup ─────────────────────────────────────────────────
-function Top5Lookup({ equipo }) {
-  const [top5Name, setTop5Name] = React.useState("");
-  const RD = "#C41230";
-  return (
-    React.createElement('div', { style: {background:"#fff",borderRadius:16,padding:"20px 22px",boxShadow:"0 4px 16px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2442}}
-      , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:RD,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.1em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2443}}, "🔍 Consulta tu score TOP 5 del año"       )
-      , React.createElement('select', { value: top5Name, onChange: function(e){setTop5Name(e.target.value);}, style: {width:"100%",padding:"10px 14px",borderRadius:10,border:"1px solid rgba(233,7,41,.2)",fontSize:14,marginBottom:12,background:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2444}}
-        , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 2445}}, "Selecciona tu nombre"  )
-        , equipo.map(function(v){return React.createElement('option', { key: v.id, value: v.nombre, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2446}}, v.nombre);})
-      )
-      , top5Name && React.createElement(Top5Badge, { nombre: top5Name, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2448}} )
     )
   );
 }
@@ -2513,31 +2648,31 @@ function EditarMetaEquipo({ metaEquipo, setMetaEquipo }) {
   const val = parseFloat(metaValor) || metaEquipo;
 
   return (
-    React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2471}}
-      , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2472}}, "🎯 Meta mensual del equipo"    )
-      , React.createElement('div', { style: {fontSize:12,color:"#9CA3AF",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2473}}, "Esta es la meta total del equipo que aparece en el dashboard principal. No modifica las metas individuales de cada ejecutivo."                    )
-      , React.createElement('div', { style: {fontSize:12,color:"#D97706",marginBottom:24,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2474}}, "⚠️ Las metas individuales se editan en \"✏️ Editar Estadísticas\"."         )
+    React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2606}}
+      , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2607}}, "🎯 Meta mensual del equipo"    )
+      , React.createElement('div', { style: {fontSize:12,color:"#9CA3AF",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2608}}, "Esta es la meta total del equipo que aparece en el dashboard principal. No modifica las metas individuales de cada ejecutivo."                    )
+      , React.createElement('div', { style: {fontSize:12,color:"#D97706",marginBottom:24,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2609}}, "⚠️ Las metas individuales se editan en \"✏️ Editar Estadísticas\"."         )
 
       /* Meta actual */
-      , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:14,padding:"20px",border:"2px solid #374151",textAlign:"center",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2477}}
-        , React.createElement('div', { style: {fontSize:12,color:"#6B7280",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.1em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2478}}, "Meta actual del equipo (dashboard)"    )
-        , React.createElement('div', { style: {fontSize:64,fontWeight:900,color:"#374151",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2479}}, metaEquipo)
-        , React.createElement('div', { style: {fontSize:13,color:"#9CA3AF",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2480}}, "UF este mes  •  "    , (metaEquipo/4).toFixed(1), " UF/sem  •  "   , (metaEquipo/22).toFixed(2), " UF/día" )
+      , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:14,padding:"20px",border:"2px solid #374151",textAlign:"center",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2612}}
+        , React.createElement('div', { style: {fontSize:12,color:"#6B7280",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.1em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2613}}, "Meta actual del equipo (dashboard)"    )
+        , React.createElement('div', { style: {fontSize:64,fontWeight:900,color:"#374151",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2614}}, metaEquipo)
+        , React.createElement('div', { style: {fontSize:13,color:"#9CA3AF",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2615}}, "UF este mes  •  "    , (metaEquipo/4).toFixed(1), " UF/sem  •  "   , (metaEquipo/22).toFixed(2), " UF/día" )
       )
 
       /* Nueva meta */
-      , React.createElement('div', { style: {background:"#FFFBEB",borderRadius:14,padding:"20px",border:"2px solid #D97706",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2484}}
-        , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:"#D97706",marginBottom:8,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2485}}, "Nueva meta del equipo (UF)"    )
+      , React.createElement('div', { style: {background:"#FFFBEB",borderRadius:14,padding:"20px",border:"2px solid #D97706",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2619}}
+        , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:"#D97706",marginBottom:8,textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2620}}, "Nueva meta del equipo (UF)"    )
         , React.createElement('input', { type: "number", step: "1", min: "1", value: metaValor,
           onChange: function(e){setMetaValor(e.target.value);},
-          style: {width:"100%",fontSize:56,fontWeight:900,color:"#D97706",border:"none",background:"transparent",outline:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2486}} )
-        , React.createElement('div', { style: {fontSize:12,color:"#92400E",marginTop:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2489}}, "Semanal: "
-           , React.createElement('strong', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2490}}, (val/4).toFixed(1), " UF" ), "  •  Diaria: "   , React.createElement('strong', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2490}}, (val/22).toFixed(2), " UF" )
+          style: {width:"100%",fontSize:56,fontWeight:900,color:"#D97706",border:"none",background:"transparent",outline:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2621}} )
+        , React.createElement('div', { style: {fontSize:12,color:"#92400E",marginTop:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2624}}, "Semanal: "
+           , React.createElement('strong', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2625}}, (val/4).toFixed(1), " UF" ), "  •  Diaria: "   , React.createElement('strong', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 2625}}, (val/22).toFixed(2), " UF" )
         )
       )
 
       , React.createElement('button', { onClick: aplicarMeta,
-        style: {width:"100%",padding:"16px",background:saved?"#16A34A":R,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",transition:"background .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2494}}
+        style: {width:"100%",padding:"16px",background:saved?"#16A34A":R,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",transition:"background .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2629}}
         , saved ? "✅ ¡Meta del equipo actualizada en el dashboard!" : "💾 Actualizar meta del equipo"
       )
     )
