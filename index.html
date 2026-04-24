@@ -4,12 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Equipo 2400 — Banmedica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&family=Bebas+Neue&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #FFF5F6; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: #FAFAFA;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
     input, select, textarea, button { font-family: inherit; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+
+    /* Big display numbers use Bebas Neue */
+    .display-num {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(180,0,30,.25); border-radius: 99px; }
+
+    /* Card hover lift */
+    .card-lift {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .card-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(180,0,30,.15) !important;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.4s ease forwards; }
   </style>
 </head>
 <body>
@@ -1356,7 +1390,7 @@ function abrirCalendario(cliente) {
   const pendientes  = crmData.filter(function(c){return c.proxAct!=="cerrado"&&c.proxAct!=="perdido";}).length;
 
   return (
-    React.createElement('div', { style: {minHeight:"100vh",background:BG,fontFamily:"system-ui,-apple-system,sans-serif",paddingBottom:60}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1314}}
+    React.createElement('div', { style: {minHeight:"100vh",background:BG,fontFamily:"'DM Sans',system-ui,sans-serif",paddingBottom:60}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1314}}
       , React.createElement('style', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 1315}}, `
         @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
         @keyframes pulse  { 0%,100% { opacity:1; } 50% { opacity:.4; } }
@@ -1372,12 +1406,12 @@ function abrirCalendario(cliente) {
         , React.createElement('div', { style: {maxWidth:1080,margin:"0 auto",padding:"18px 24px 0"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1327}}
           , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1328}}
             , React.createElement('div', { style: {background:"#fff",borderRadius:12,padding:"10px 20px",boxShadow:"0 2px 12px rgba(0,0,0,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1329}}
-              , React.createElement('div', { style: {fontSize:17,fontWeight:900,color:R,letterSpacing:"-0.02em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1330}}, "Banmedica")
+              , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:R,letterSpacing:"-0.03em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1330}}, "Banmedica")
               , React.createElement('div', { style: {fontSize:9,color:"#999",letterSpacing:"0.08em",textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1331}}, "Isapre")
             )
             , React.createElement('div', { style: {textAlign:"center",flex:1,padding:"0 16px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1333}}
               , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",marginBottom:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1334}}, "Centro de Gestion de Ventas"    )
-              , React.createElement('div', { style: {fontSize:22,fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1335}}, "Equipo 2400" )
+              , React.createElement('div', { style: {fontSize:28,fontWeight:900,letterSpacing:"-0.03em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1335}}, "Equipo 2400" )
               , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",marginTop:2,textTransform:"capitalize"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1336}}, info.dia)
               , React.createElement('div', { style: {marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1337}}, React.createElement(StatusFirebase, { sincronizado: sincronizado, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1337}} ))
             )
@@ -1387,7 +1421,7 @@ function abrirCalendario(cliente) {
           )
           , React.createElement('div', { style: {display:"flex",gap:3,overflowX:"auto",justifyContent:"center",flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1343}}
             , TABS.map(function(t){
-              return React.createElement('button', { key: t.k, onClick: function(){setTab(t.k);}, style: {padding:"10px 16px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,whiteSpace:"nowrap",background:tab===t.k?BG:"rgba(255,255,255,.1)",color:tab===t.k?R:"rgba(255,255,255,.8)",transition:"all .2s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1345}}, t.l);
+              return React.createElement('button', { key: t.k, onClick: function(){setTab(t.k);}, style: {padding:"10px 18px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,whiteSpace:"nowrap",letterSpacing:"0.01em",background:tab===t.k?BG:"rgba(255,255,255,.1)",color:tab===t.k?R:"rgba(255,255,255,.8)",transition:"all .2s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1345}}, t.l);
             })
           )
         )
@@ -1410,8 +1444,8 @@ function abrirCalendario(cliente) {
                 )
               )
               , React.createElement('div', { style: {textAlign:"center",margin:"0 0 22px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1367}}
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.65)",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1368}}, "UF acumuladas este mes"   )
-                , React.createElement('div', { style: {fontSize:76,fontWeight:900,lineHeight:1,letterSpacing:"-0.04em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1369}}, totUF.toFixed(1))
+                , React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.55)",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1368}}, "UF acumuladas este mes"   )
+                , React.createElement('div', { style: {fontSize:88,fontWeight:900,lineHeight:1,letterSpacing:"-0.05em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1369}}, totUF.toFixed(1))
                 , React.createElement('div', { style: {fontSize:14,color:"rgba(255,255,255,.65)",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1370}}, "de ", React.createElement('span', { style: {color:"#fff",fontWeight:700,fontSize:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1370}}, META_UF+" UF"), " meta mensual del equipo")
               )
               , React.createElement('div', { style: {marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1372}}
@@ -1455,7 +1489,7 @@ function abrirCalendario(cliente) {
               )
               , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginTop:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1411}}
                 , React.createElement('div', { style: {background:"rgba(220,38,38,.35)",borderRadius:14,padding:"14px 12px",textAlign:"center",border:"2px solid rgba(252,165,165,.5)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1412}}
-                  , React.createElement('div', { style: {fontSize:28,fontWeight:900,lineHeight:1,color:"#FCA5A5"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1413}}, equipo.filter(function(v){return v.uf===0;}).length)
+                  , React.createElement('div', { style: {fontSize:36,fontWeight:900,lineHeight:1,color:"#FCA5A5"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1413}}, equipo.filter(function(v){return v.uf===0;}).length)
                   , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.9)",marginTop:4,fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1414}}, "AGV en Cero"  )
                   , React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.55)",marginTop:2}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 1415}}, "sin UF este mes"   )
                 )
