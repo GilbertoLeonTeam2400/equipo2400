@@ -4,7 +4,17 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Equipo 2400 — Banmedica</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap" rel="stylesheet">
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}input,select,textarea,button{font-family:inherit;}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:rgba(180,0,30,.3);border-radius:99px;}</style>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+    input,select,textarea,button{font-family:inherit;}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1;}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:rgba(180,0,30,.3);border-radius:99px;}
+    /* Hide spinner arrows on the UF meta input specifically */
+    input[type=number].no-spin::-webkit-inner-spin-button,
+    input[type=number].no-spin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+    input[type=number].no-spin{-moz-appearance:textfield;}
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -2976,7 +2986,7 @@ function abrirCalendario(cliente) {
     {k:"historial",     l:"Mi Productividad"},
     {k:"crm",           l:"Mis Clientes"},
     {k:"reconocimiento",l:"Reconocimientos"},
-    {k:"calculadora",    l:"💰 Cuánto Gano"},
+    {k:"calculadora",    l:"🎯 META MES"},
     {k:"supervisor",    l:"Supervisor"},
   ];
 
@@ -4635,33 +4645,37 @@ function ExcelDataView({ equipo, setEquipo, info }) {
                     , v.nombre
                   )
                   , MESES_ORDEN.map(function(mk){
-                    var d    = hist[mk] || {};
+                    // For historical months: merge Excel base data with any manual edits
+                    var excelBase = (HISTORIAL_EXCEL[v.id]||HISTORIAL_EXCEL[String(v.id)]||{})[mk] || {};
+                    var manualEdit = hist[mk] || {};
+                    var d    = Object.keys(manualEdit).length > 0 ? manualEdit : excelBase;
                     var uf   = d.uf   || 0;
                     var dps  = d.dps  || 0;
                     var dpsV = d.dpsVenta || 0;
                     var pct  = v.metaUF>0 ? Math.round((uf/v.metaUF)*100) : 0;
                     var col  = pct>=100?"#16A34A":pct>=60?"#D97706":uf>0?"#DC2626":"#9CA3AF";
                     return [
-                      React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4622}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "uf",       value: uf,   color: col, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4622}}     )),
-                      React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4623}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dps",      value: dps,  color: "#16A34A", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4623}} )),
-                      React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4624}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dpsVenta", value: dpsV, color: "#059669", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4624}} )),
+                      React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4625}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "uf",       value: uf,   color: col, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4625}}     )),
+                      React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4626}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dps",      value: dps,  color: "#16A34A", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4626}} )),
+                      React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4627}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dpsVenta", value: dpsV, color: "#059669", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4627}} )),
                     ];
                   })
                 )
               );
             })
           )
-          , React.createElement('tfoot', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4631}}
-            , React.createElement('tr', { style: {background:"#FFF5F6",fontWeight:900,borderTop:"2px solid rgba(233,7,41,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4632}}
-              , React.createElement('td', { style: {padding:"9px 10px",color:RD,fontSize:11,position:"sticky",left:0,background:"#FFF5F6"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4633}}, "TOTAL")
+          , React.createElement('tfoot', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4634}}
+            , React.createElement('tr', { style: {background:"#FFF5F6",fontWeight:900,borderTop:"2px solid rgba(233,7,41,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4635}}
+              , React.createElement('td', { style: {padding:"9px 10px",color:RD,fontSize:11,position:"sticky",left:0,background:"#FFF5F6"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4636}}, "TOTAL")
               , MESES_ORDEN.map(function(mk){
-                var tUF  = equipo.reduce(function(s,v){return s+((v.historial||{})[mk]||{}).uf||0;},0);
-                var tDPS = equipo.reduce(function(s,v){return s+((v.historial||{})[mk]||{}).dps||0;},0);
-                var tDPV = equipo.reduce(function(s,v){return s+((v.historial||{})[mk]||{}).dpsVenta||0;},0);
+                // Use HISTORIAL_EXCEL directly as source of truth for historical totals
+                var tUF  = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).uf||0);},0);
+                var tDPS = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).dps||0);},0);
+                var tDPV = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).dpsVenta||0);},0);
                 return [
-                  React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center",color:RD,fontWeight:900,fontSize:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4639}}, tUF.toFixed(2)),
-                  React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center",color:"#16A34A",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4640}}, tDPS),
-                  React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center",color:"#059669",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4641}}, tDPV),
+                  React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center",color:RD,fontWeight:900,fontSize:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4643}}, tUF.toFixed(2)),
+                  React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center",color:"#16A34A",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4644}}, tDPS),
+                  React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center",color:"#059669",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4645}}, tDPV),
                 ];
               })
             )
@@ -4736,87 +4750,87 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta }) {
   var totalMeta        = comisionMeta + totalPremiosMeta;
 
   return (
-    React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4716}}
+    React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4720}}
       /* Header */
-      , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"22px 24px",color:"#fff",marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4718}}
-        , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4719}}, "Simulador de ingresos"  )
-        , React.createElement('div', { style: {fontSize:26,fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4720}}, "💰 ¿Cuánto quiero ganar?"   )
-        , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.7)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4721}}, "Simula tus UF, elige tu meta y comprométete con ella."         )
+      , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"22px 24px",color:"#fff",marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4722}}
+        , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4723}}, "Simulador de ingresos"  )
+        , React.createElement('div', { style: {fontSize:22,fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4724}}, "💰 ¿Cuánto ganaré este mes de "      , info.mes.split(" ")[0], "?")
+        , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.7)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4725}}, "Elige tu meta y comprométete con ella."      )
       )
 
       /* Login */
       , !pinOk && (
-        React.createElement('div', { style: {background:"#fff",borderRadius:16,padding:"24px",border:"1.5px solid rgba(233,7,41,.2)",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4726}}
-          , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4727}}, "Selecciona tu nombre e ingresa tu PIN"      )
+        React.createElement('div', { style: {background:"#fff",borderRadius:16,padding:"24px",border:"1.5px solid rgba(233,7,41,.2)",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4730}}
+          , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4731}}, "Selecciona tu nombre e ingresa tu PIN"      )
           , React.createElement('select', { value: selId, onChange: function(e){setSelId(e.target.value);setPinOk(false);setPinCal("");setPinErr(false);},
-            style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:14,marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4728}}
-            , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4730}}, "Selecciona tu nombre"  )
-            , equipo.map(function(e){return React.createElement('option', { key: e.id, value: e.id, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4731}}, e.nombre);})
+            style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:14,marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4732}}
+            , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4734}}, "Selecciona tu nombre"  )
+            , equipo.map(function(e){return React.createElement('option', { key: e.id, value: e.id, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4735}}, e.nombre);})
           )
           , selId && (
-            React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4734}}
+            React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4738}}
               , React.createElement('input', { type: "password", value: pinCal, placeholder: "Tu PIN" ,
                 onChange: function(e){setPinCal(e.target.value);setPinErr(false);},
                 onKeyDown: function(e){if(e.key==="Enter")loginCal();},
-                style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:18,textAlign:"center",letterSpacing:"0.4em",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4735}} )
-              , pinErr && React.createElement('div', { style: {color:R,fontSize:13,marginBottom:8,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4739}}, "PIN incorrecto" )
-              , React.createElement('button', { onClick: loginCal, style: {width:"100%",padding:"12px",background:RD,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4740}}, "Ingresar")
+                style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:18,textAlign:"center",letterSpacing:"0.4em",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4739}} )
+              , pinErr && React.createElement('div', { style: {color:R,fontSize:13,marginBottom:8,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4743}}, "PIN incorrecto" )
+              , React.createElement('button', { onClick: loginCal, style: {width:"100%",padding:"12px",background:RD,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4744}}, "Ingresar")
             )
           )
         )
       )
 
       , pinOk && v && (
-        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4747}}
+        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4751}}
           /* ── SECCIÓN PRINCIPAL: Tu meta del mes ── */
-          , React.createElement('div', { style: {background:"linear-gradient(135deg,#1D4ED8,#1e40af)",borderRadius:20,padding:"28px 26px",marginBottom:20,boxShadow:"0 8px 32px rgba(29,78,216,.3)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4749}}
-            , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4750}}, "🎯 Tu compromiso del mes"    )
-            , React.createElement('div', { style: {fontSize:16,fontWeight:900,color:"#FCD34D",marginBottom:20,lineHeight:1.3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4751}}, "¡Estas son las UF que merezco — voy por ellas!"
+          , React.createElement('div', { style: {background:"linear-gradient(135deg,#1D4ED8,#1e40af)",borderRadius:20,padding:"28px 26px",marginBottom:20,boxShadow:"0 8px 32px rgba(29,78,216,.3)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4753}}
+            , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4754}}, "🎯 Tu compromiso del mes"    )
+            , React.createElement('div', { style: {fontSize:16,fontWeight:900,color:"#FCD34D",marginBottom:20,lineHeight:1.3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4755}}, "¡Estas son las UF que merezco — voy por ellas!"
 
             )
-            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4754}}
-              , React.createElement('div', { style: {background:"rgba(255,255,255,.1)",borderRadius:16,padding:"20px 18px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4755}}
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4756}}, "UF que voy a lograr"    )
+            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4758}}
+              , React.createElement('div', { style: {background:"rgba(255,255,255,.1)",borderRadius:16,padding:"20px 18px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4759}}
+                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4760}}, "UF que voy a lograr"    )
                 , React.createElement('input', { type: "number", step: "0.5", min: "0", value: ufMeta,
                   onChange: function(e){setUfMeta(parseFloat(e.target.value)||0);},
-                  style: {fontSize:64,fontWeight:900,color:"#FCD34D",border:"none",borderBottom:"3px solid rgba(252,211,77,.5)",outline:"none",width:"100%",background:"transparent",textAlign:"center",MozAppearance:"textfield",WebkitAppearance:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4757}} )
-                , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4760}}, "UF este mes"  )
+                  style: {fontSize:"clamp(28px,10vw,64px)",fontWeight:900,color:"#FCD34D",border:"none",borderBottom:"3px solid rgba(252,211,77,.5)",outline:"none",width:"100%",background:"transparent",textAlign:"center",MozAppearance:"textfield",WebkitAppearance:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4761}} )
+                , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4764}}, "UF este mes"  )
               )
-              , React.createElement('div', { style: {background:"rgba(252,211,77,.15)",borderRadius:16,padding:"20px 18px",textAlign:"center",border:"2px solid rgba(252,211,77,.4)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4762}}
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4763}}, "Lo que ganaré"  )
-                , React.createElement('div', { style: {fontSize:38,fontWeight:900,color:"#FCD34D",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4764}}, fmt(totalMeta))
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4765}}, "comisión + premios"  )
+              , React.createElement('div', { style: {background:"rgba(252,211,77,.15)",borderRadius:16,padding:"20px 18px",textAlign:"center",border:"2px solid rgba(252,211,77,.4)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4766}}
+                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4767}}, "Lo que ganaré"  )
+                , React.createElement('div', { style: {fontSize:"clamp(18px,6vw,38px)",fontWeight:900,color:"#FCD34D",lineHeight:1,wordBreak:"break-word"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4768}}, fmt(totalMeta))
+                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4769}}, "comisión + premios"  )
               )
             )
             /* Premio Plan Conecta - dentro del compromiso */
             , premios.map(function(p){
               return (
-                React.createElement('div', { key: p.id, style: {background:"rgba(255,255,255,.1)",borderRadius:14,padding:"14px 16px",marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4771}}
-                  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4772}}
-                    , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4773}}, p.nombre)
-                    , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4774}}, fmt(p.valorUnitario*(p.cantidad||0)))
+                React.createElement('div', { key: p.id, style: {background:"rgba(255,255,255,.1)",borderRadius:14,padding:"14px 16px",marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4775}}
+                  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4776}}
+                    , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4777}}, p.nombre)
+                    , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4778}}, fmt(p.valorUnitario*(p.cantidad||0)))
                   )
-                  , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4776}}, fmt(p.valorUnitario), " por plan · "    , p.cantidad||0, " planes" )
-                  , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4777}}
+                  , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4780}}, fmt(p.valorUnitario), " por plan · "    , p.cantidad||0, " planes" )
+                  , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4781}}
                     , React.createElement('button', { onClick: function(){var arr=premios.map(function(x){return x.id===p.id?Object.assign({},x,{cantidad:Math.max(0,(x.cantidad||0)-1)}):x;});setPremios(arr);},
-                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4778}}, "−")
-                    , React.createElement('div', { style: {fontSize:26,fontWeight:900,color:"#FCD34D",minWidth:40,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4780}}, p.cantidad||0)
+                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4782}}, "−")
+                    , React.createElement('div', { style: {fontSize:26,fontWeight:900,color:"#FCD34D",minWidth:40,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4784}}, p.cantidad||0)
                     , React.createElement('button', { onClick: function(){var arr=premios.map(function(x){return x.id===p.id?Object.assign({},x,{cantidad:(x.cantidad||0)+1}):x;});setPremios(arr);},
-                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4781}}, "+")
-                    , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4783}}, "planes Conecta" )
+                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4785}}, "+")
+                    , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4787}}, "planes Conecta" )
                   )
                 )
               );
             })
             , React.createElement('button', { onClick: guardarMeta,
-              style: {width:"100%",padding:"16px",background:metaGuardada?"#16A34A":"rgba(252,211,77,.9)",color:metaGuardada?"#fff":"#1D4ED8",border:"none",borderRadius:12,fontSize:16,fontWeight:900,cursor:"pointer",transition:"all .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4788}}
+              style: {width:"100%",padding:"16px",background:metaGuardada?"#16A34A":"rgba(252,211,77,.9)",color:metaGuardada?"#fff":"#1D4ED8",border:"none",borderRadius:12,fontSize:16,fontWeight:900,cursor:"pointer",transition:"all .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4792}}
               , metaGuardada?"✅ ¡Meta guardada! El supervisor ya puede verla":"💾 Guardar mi meta del mes"
             )
           )
 
 
           , React.createElement('button', { onClick: function(){setPinOk(false);setSelId("");setPinCal("");},
-            style: {width:"100%",padding:"12px",background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4795}}, "Cerrar sesión"
+            style: {width:"100%",padding:"12px",background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4799}}, "Cerrar sesión"
 
           )
         )
