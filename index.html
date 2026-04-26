@@ -2058,9 +2058,15 @@ const EJECUTIVOS_BASE = [
 // ── Formateador UF: hasta 3 decimales, sin ceros finales, coma decimal ──────
 function fmtUF(n) {
   if (n === null || n === undefined || isNaN(n)) return "0";
-  // Redondear a 3 decimales
   var fixed = parseFloat(n.toFixed(3));
-  // Eliminar ceros finales y convertir punto en coma
+  var str = fixed.toString().replace(".", ",");
+  return str;
+}
+// ── Formateador UF 2 dec: truncado (sin redondeo), sin ceros finales, coma ──
+function fmtUF2(n) {
+  if (n === null || n === undefined || isNaN(n)) return "0";
+  var truncated = Math.floor(n * 100) / 100;
+  var fixed = parseFloat(truncated.toFixed(2));
   var str = fixed.toString().replace(".", ",");
   return str;
 }
@@ -2733,7 +2739,7 @@ function abrirCalendario(cliente) {
   const totUF   = equipo.reduce(function(s,v){return s+v.uf;},0);
   const totDPS  = equipo.reduce(function(s,v){return s+v.dps;},0);
   const falta   = Math.max(0, META_UF - totUF);
-  const xCrack  = equipo.length > 0 ? fmtUF(falta/equipo.length) : "0";
+  const xCrack  = equipo.length > 0 ? fmtUF2(falta/equipo.length) : "0";
   const totHombres = equipo.reduce(function(s,v){return s+v.rep.reduce(function(a,r){return a+(r.hombres||0);},0);},0);
   const totMujeres = equipo.reduce(function(s,v){return s+v.rep.reduce(function(a,r){return a+(r.mujeres||0);},0);},0);
   const totConecta = equipo.reduce(function(s,v){return s+v.rep.reduce(function(a,r){return a+(r.conecta||0);},0);},0);
@@ -3095,7 +3101,7 @@ function abrirCalendario(cliente) {
                 , React.createElement('div', { style: {textAlign:"center",margin:"14px 0 20px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3050}}
                   , React.createElement('div', { style: {fontSize:10,fontWeight:700,color:"rgba(201,168,76,.7)",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3051}}, "Total UF conseguidas por el equipo"  )
                   , React.createElement('div', { style: {fontSize:"clamp(62px,18vw,110px)",fontWeight:900,lineHeight:1,color:"#C9A84C",textShadow:"0 0 40px rgba(201,168,76,.55), 0 4px 24px rgba(0,0,0,.6)",letterSpacing:"-0.02em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3052}}
-                    , fmtUF(totUF)
+                    , fmtUF2(totUF)
                   )
                   , React.createElement('div', { style: {fontSize:13,color:"rgba(201,168,76,.8)",fontWeight:700,marginTop:4,letterSpacing:"0.08em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3055}}
                     , "de "+META_UF+" UF meta del mes"
@@ -3105,7 +3111,7 @@ function abrirCalendario(cliente) {
                 , React.createElement('div', { style: {marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3060}}
                   , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3061}}
                     , React.createElement('span', { style: {fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3062}}, "Avance hacia la meta"   )
-                    , React.createElement('span', { style: {fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3063}}, fmtUF(totUF)+" / "+META_UF+" UF")
+                    , React.createElement('span', { style: {fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3063}}, fmtUF2(totUF)+" / "+META_UF+" UF")
                   )
                   , React.createElement('div', { style: {position:"relative",height:14,background:"rgba(255,255,255,.1)",borderRadius:99,border:"1px solid rgba(255,255,255,.12)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3065}}
                     , React.createElement('div', { style: {position:"absolute",left:0,top:0,height:"100%",width:Math.min((totUF/META_UF)*100,100)+"%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99,transition:"width 1s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3066}} )
@@ -3118,11 +3124,11 @@ function abrirCalendario(cliente) {
                 /* KPIs fila */
                 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3074}}
                   , React.createElement('div', { style: {background:"rgba(255,255,255,.06)",borderRadius:12,padding:"12px 10px",textAlign:"center",border:"1px solid rgba(201,168,76,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3075}}
-                    , React.createElement('div', { style: {fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:"#C9A84C",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3076}}, fmtUF(falta))
+                    , React.createElement('div', { style: {fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:"#C9A84C",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3076}}, fmtUF2(falta))
                     , React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",letterSpacing:"0.12em",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3077}}, "UF que faltan"  )
                   )
                   , React.createElement('div', { style: {background:"rgba(255,255,255,.06)",borderRadius:12,padding:"12px 10px",textAlign:"center",border:"1px solid rgba(201,168,76,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3079}}
-                    , React.createElement('div', { style: {fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:"#C9A84C",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3080}}, info.left>0?fmtUF(falta/info.left):"0")
+                    , React.createElement('div', { style: {fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:"#C9A84C",lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3080}}, info.left>0?fmtUF2(falta/info.left):"0")
                     , React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",letterSpacing:"0.12em",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3081}}, "UF/día · "+info.left+" días")
                   )
                   , React.createElement('div', { style: {background:"rgba(255,255,255,.06)",borderRadius:12,padding:"12px 10px",textAlign:"center",border:"1px solid rgba(201,168,76,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3083}}
@@ -3176,8 +3182,8 @@ function abrirCalendario(cliente) {
               , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3131}}
                 , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"20px 22px",color:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3132}}
                   , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.7)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3133}}, "UF cerradas hoy"  )
-                  , React.createElement('div', { style: {fontSize:46,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3134}}, fmtUF(ufHoy))
-                  , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.65)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3135}}, "Meta diaria: "+fmtUF(META_UF/WD_MES)+" UF")
+                  , React.createElement('div', { style: {fontSize:46,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3134}}, fmtUF2(ufHoy))
+                  , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.65)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3135}}, "Meta diaria: "+fmtUF2(META_UF/WD_MES)+" UF")
                   , React.createElement('div', { style: {marginTop:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3136}}, React.createElement(Bar, { pct: (ufHoy/(META_UF/WD_MES))*100, color: "rgba(255,255,255,.8)", h: 6, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3136}} ))
                 )
                 , React.createElement('div', { style: {background:"linear-gradient(135deg,#065F46,#059669)",borderRadius:16,padding:"20px 22px",color:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3138}}
@@ -3234,11 +3240,11 @@ function abrirCalendario(cliente) {
         , tab==="formulario" && (
           React.createElement('div', { style: {maxWidth:600,margin:"0 auto"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3190}}
             , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"18px 22px",color:"#fff",marginBottom:20,display:"flex",alignItems:"center",gap:18}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3191}}
-              , React.createElement('div', { style: {textAlign:"center",minWidth:80}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, React.createElement('div', { style: {fontSize:34,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, fmtUF(totUF)), React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, "UF equipo" ))
+              , React.createElement('div', { style: {textAlign:"center",minWidth:80}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, React.createElement('div', { style: {fontSize:34,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, fmtUF2(totUF)), React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, "UF equipo" ))
               , React.createElement('div', { style: {flex:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3193}}
                 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:7,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, React.createElement('span', { style: {color:"rgba(255,255,255,.75)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, "Avance del equipo"  ), React.createElement('span', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, Math.round((totUF/META_UF)*100)+"% de "+META_UF+" UF"))
                 , React.createElement(Bar, { pct: Math.round((totUF/META_UF)*100), color: "rgba(255,255,255,.9)", h: 10, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3195}} )
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3196}}, "Faltan "+fmtUF(falta)+" UF para la meta del equipo")
+                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3196}}, "Faltan "+fmtUF2(falta)+" UF para la meta del equipo")
               )
             )
             , React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:32,boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.08)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3199}}
@@ -3402,7 +3408,7 @@ function abrirCalendario(cliente) {
                       , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3357}}
                         , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3358}}
                           , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3359}}, "UF cerradas este mes"   )
-                          , React.createElement('div', { style: {fontSize:42,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3360}}, fmtUF(tot.uf))
+                          , React.createElement('div', { style: {fontSize:42,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3360}}, fmtUF2(tot.uf))
                           , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.65)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3361}}, "de "+v.metaUF+" UF meta mensual")
                         )
                         , React.createElement('div', { style: {textAlign:"right"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3363}}
@@ -3470,7 +3476,7 @@ function abrirCalendario(cliente) {
                             , React.createElement('div', { style: {width:Math.min(cumpl,100)+"%",height:"100%",background:colCumpl,borderRadius:99,transition:"width .7s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3425}} )
                           )
                           , React.createElement('div', { style: {fontSize:12,color:"#6B7280"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3427}}
-                            , fmtUF(v.uf)+" UF de "+v.metaUF+" UF meta mensual - "+fmtUF(Math.max(0,v.metaUF-v.uf))+" UF para completar"
+                            , fmtUF2(v.uf)+" UF de "+v.metaUF+" UF meta mensual - "+fmtUF2(Math.max(0,v.metaUF-v.uf))+" UF para completar"
                           )
                         )
                       )
