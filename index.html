@@ -2449,7 +2449,7 @@ function HistorialPersonal({ histV, histLogout, info }) {
 function PanelAlertas({ equipo, proyV }) {
   var enRiesgo = equipo.filter(function(v) {
     var proy = proyV(v);
-    return proy > 0 && (v.uf / proy) < 0.6 && v.rep.length > 0;
+    return proy > 0 && (v.uf / proy) < 0.6;
   }).sort(function(a,b) { return (a.uf/proyV(a)) - (b.uf/proyV(b)); });
 
   if (enRiesgo.length === 0) return null;
@@ -3159,7 +3159,7 @@ function abrirCalendario(cliente) {
                   , React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",letterSpacing:"0.1em",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3109}}, "comisionando")
                 )
                 , React.createElement('div', { style: {padding:"12px 0",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3111}}
-                  , React.createElement('div', { style: {fontSize:24,fontWeight:900,color:"#FDE047"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3112}}, equipo.filter(function(v){return v.uf>=35;}).length)
+                  , React.createElement('div', { style: {fontSize:24,fontWeight:900,color:"#FDE047"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3112}}, equipo.filter(function(v){return v.uf>=(info.elapsed<=7?12:25);}).length)
                   , React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",letterSpacing:"0.1em",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3113}}, "alto rendimiento" )
                 )
               )
