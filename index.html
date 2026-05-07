@@ -3000,13 +3000,13 @@ function abrirCalendario(cliente) {
   const BTN = {background:R,color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontFamily:"inherit",cursor:"pointer",fontWeight:700};
 
   const TABS = [
-    {k:"equipo",        l:"Equipo"},
-    {k:"formulario",    l:"Mi Reporte Diario"},
-    {k:"historial",     l:"Mi Productividad"},
-    {k:"crm",           l:"Mis Clientes"},
-    {k:"reconocimiento",l:"Reconocimientos"},
-    {k:"calculadora",    l:"🎯 META MES"},
-    {k:"supervisor",    l:"Supervisor"},
+    {k:"equipo",        l:"🏆 Equipo"},
+    {k:"formulario",    l:"📋 Mi Reporte Diario"},
+    {k:"calculadora",   l:"🎯 Mi Meta de este Mes!"},
+    {k:"historial",     l:"📈 Mi Productividad"},
+    {k:"crm",           l:"👥 Mis Clientes"},
+    {k:"reconocimiento",l:"🌟 Reconocimientos"},
+    {k:"supervisor",    l:"🔐 Supervisor"},
   ];
 
   //  CRM computed 
@@ -3729,7 +3729,7 @@ function abrirCalendario(cliente) {
               React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3668}}
                 , React.createElement('div', { style: {display:"flex",gap:10,marginBottom:22,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3669}}
                   , React.createElement('div', { style: {display:"flex",gap:10,flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3670}}
-                    , [["dashboard","Dashboard"],["carga","Cargar UF/DPS"],["gestion","Gestionar Equipo"],["editar","✏️ Editar Estadísticas"],["meta","🎯 Meta del Equipo"],["excel","📊 Datos Excel"],["agentes0","🚨 Agentes en 0"],["uflineales","📈 UF's Lineales"]].map(function(item){
+                    , [["dashboard","📊 Dashboard"],["carga","📥 Cargar UF/DPS Mes en Curso"],["gestion","👥 Gestionar Equipo"],["editar","✏️ Editar Estadísticas de Productividad Individuales"],["meta","🎯 Meta del Equipo"],["excel","📂 Carga de Datos Excel"],["agentes0","🚨 Agentes en 0"],["uflineales","📈 UF's Lineales"]].map(function(item){
                       return React.createElement('button', { key: item[0], onClick: function(){if(item[0]==="carga")abrirCarga();else setSupVista(item[0]);}, style: {padding:"10px 18px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,background:supVista===item[0]?R:"#E5E7EB",color:supVista===item[0]?"#fff":"#374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3672}}, item[1]);
                     })
                   )
@@ -3830,7 +3830,10 @@ function abrirCalendario(cliente) {
                 )
 
                 , supVista==="editar"&&React.createElement(EditarDatosView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3770}} )
-                , supVista==="meta"&&React.createElement(EditarMetaEquipo, { metaEquipo: metaEquipo, setMetaEquipo: setMetaEquipo, premioConecta: premioConecta, setPremioConecta: setPremioConecta, nombrePremio: nombrePremio, setNombrePremio: setNombrePremio, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3771}} )
+                , supVista==="meta"&&React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:18} },
+                  React.createElement(MetasIndividualesView, { equipo: equipo, setEquipo: setEquipo }),
+                  React.createElement(EditarMetaEquipo, { metaEquipo: metaEquipo, setMetaEquipo: setMetaEquipo, premioConecta: premioConecta, setPremioConecta: setPremioConecta, nombrePremio: nombrePremio, setNombrePremio: setNombrePremio })
+                )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
                 , supVista==="agentes0"&&React.createElement(AgentesEnCeroView, { equipo: equipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3773}} )
                 , supVista==="uflineales"&&React.createElement(UFLinealesView, { equipo: equipo, info: info })
@@ -4466,6 +4469,115 @@ function EditarDatosView({ equipo, setEquipo, info }) {
 
 
 // ── Editor de meta general del equipo ────────────────────────────
+// ── Metas Individuales por Semana ─────────────────────────────────
+function MetasIndividualesView({ equipo, setEquipo }) {
+  var RD = "#C41230", R = "#E9192A";
+  var [saved, setSaved] = useState(false);
+  // Local copy of metas to edit
+  var [metas, setMetas] = useState(function() {
+    return equipo.map(function(v) {
+      var ms = v.metasSemanas || [
+        Math.round(v.metaUF * 0.20),
+        Math.round(v.metaUF * 0.45),
+        Math.round(v.metaUF * 0.72),
+        v.metaUF
+      ];
+      return { id: v.id, nombre: v.nombre, metaMes: v.metaUF, semanas: ms.slice(0,4) };
+    });
+  });
+
+  function updateMeta(id, field, value) {
+    setMetas(metas.map(function(m) {
+      if (m.id !== id) return m;
+      if (field === "mes") return Object.assign({}, m, { metaMes: value });
+      var s = m.semanas.slice();
+      s[field] = value;
+      return Object.assign({}, m, { semanas: s });
+    }));
+  }
+
+  function guardar() {
+    setEquipo(equipo.map(function(v) {
+      var m = metas.find(function(x) { return x.id === v.id; });
+      if (!m) return v;
+      return Object.assign({}, v, { metaUF: m.metaMes, metasSemanas: m.semanas });
+    }));
+    setSaved(true);
+    setTimeout(function() { setSaved(false); }, 3000);
+  }
+
+  function inp(id, field, val) {
+    return React.createElement('input', {
+      type: "number", min: "0", step: "1", value: val === 0 ? "" : val,
+      placeholder: "0",
+      onChange: function(e) { updateMeta(id, field, parseFloat(e.target.value) || 0); },
+      style: { width: "100%", padding: "6px 8px", fontSize: 13, fontWeight: 700, borderRadius: 8,
+               border: "1.5px solid #E5E7EB", textAlign: "center", fontFamily: "inherit",
+               outline: "none", background: "#FAFAFA", color: "#1F2937" }
+    });
+  }
+
+  var thStyle = { padding: "10px 8px", fontSize: 11, color: "#6B7280", fontWeight: 700,
+                  textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap",
+                  background: "#F8FAFC", borderBottom: "2px solid #E5E7EB" };
+  var sem_colors = ["#3B82F6","#8B5CF6","#F59E0B","#16A34A"];
+
+  return React.createElement('div', { style: { background: "#fff", borderRadius: 18, padding: "24px 22px",
+    boxShadow: "0 4px 20px rgba(233,7,41,.09)", border: "1px solid rgba(233,7,41,.1)" } },
+    React.createElement('div', { style: { fontSize: 18, fontWeight: 900, color: RD, marginBottom: 4 } },
+      "📋 Metas individuales por semana y mes"),
+    React.createElement('div', { style: { fontSize: 12, color: "#9CA3AF", marginBottom: 20 } },
+      "Define la meta de cierre de cada semana (acumulada) y la meta final de mes para cada ejecutivo."),
+    React.createElement('div', { style: { overflowX: "auto" } },
+      React.createElement('table', { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
+        React.createElement('thead', null,
+          React.createElement('tr', null,
+            React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: "left", paddingLeft: 12 }) }, "Ejecutivo"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[0] }) }, "🎯 Sem 1"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[1] }) }, "🎯 Sem 2"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[2] }) }, "🎯 Sem 3"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[3] }) }, "🎯 Sem 4"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900 }) }, "🏁 META MES")
+          )
+        ),
+        React.createElement('tbody', null,
+          metas.map(function(m, i) {
+            var bg = i % 2 === 0 ? "#fff" : "#FAFBFF";
+            return React.createElement('tr', { key: m.id, style: { background: bg, borderBottom: "1px solid #F0F4FA" } },
+              React.createElement('td', { style: { padding: "10px 12px", fontWeight: 700, color: RD, whiteSpace: "nowrap", fontSize: 12 } },
+                m.nombre
+              ),
+              [0,1,2,3].map(function(si) {
+                return React.createElement('td', { key: si, style: { padding: "8px 6px", textAlign: "center" } },
+                  inp(m.id, si, m.semanas[si] || 0)
+                );
+              }),
+              React.createElement('td', { style: { padding: "8px 6px", textAlign: "center" } },
+                React.createElement('input', {
+                  type: "number", min: "0", step: "1",
+                  value: m.metaMes === 0 ? "" : m.metaMes,
+                  placeholder: "0",
+                  onChange: function(e) { updateMeta(m.id, "mes", parseFloat(e.target.value) || 0); },
+                  style: { width: "100%", padding: "6px 8px", fontSize: 14, fontWeight: 900, borderRadius: 8,
+                           border: "2px solid "+RD, textAlign: "center", fontFamily: "inherit",
+                           outline: "none", background: "#FFF0F2", color: RD }
+                })
+              )
+            );
+          })
+        )
+      )
+    ),
+    React.createElement('button', {
+      onClick: guardar,
+      style: { marginTop: 20, width: "100%", padding: "14px", background: saved ? "#16A34A" : R,
+               color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700,
+               cursor: "pointer", transition: "background .3s" }
+    }, saved ? "✅ ¡Metas guardadas!" : "💾 Guardar metas del equipo")
+  );
+}
+
+
 function EditarMetaEquipo({ metaEquipo, setMetaEquipo, premioConecta, setPremioConecta, nombrePremio, setNombrePremio }) {
   const RD = "#C41230", R = "#E9192A";
   const [metaValor, setMetaValor] = React.useState(String(metaEquipo));
@@ -4870,13 +4982,19 @@ function ExcelDataView({ equipo, setEquipo, info }) {
   const MESES_ORDEN  = ["2025-10","2025-11","2025-12","2026-01","2026-02","2026-03"];
   const MESES_LABEL  = {"2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25","2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26"};
 
+  const [subVista, setSubVista] = React.useState("historial");
   const [editing,  setEditing]  = React.useState(null);
   const [editVal,  setEditVal]  = React.useState("");
   const [saved,    setSaved]    = React.useState(false);
-  const [sortMes,  setSortMes]  = React.useState(null);  // {key, field} or null
+  const [sortMes,  setSortMes]  = React.useState(null);
   const [sortDir,  setSortDir]  = React.useState("desc");
+  // Excel upload state
+  const [excelMsg, setExcelMsg] = React.useState("");
+  const [excelOk,  setExcelOk]  = React.useState(false);
+  // Borrar todos state
+  const [borrandoTodos, setBorrandoTodos] = React.useState(false);
+  const [borradoOk,     setBorradoOk]     = React.useState(false);
 
-  // Original order (index in equipo array)
   function getOrden() {
     if (!sortMes) return equipo.map(function(_,i){return i;});
     return equipo.map(function(_,i){return i;}).sort(function(a,b){
@@ -4885,22 +5003,15 @@ function ExcelDataView({ equipo, setEquipo, info }) {
       return sortDir==="desc" ? vb-va : va-vb;
     });
   }
-
   function toggleSort(key, field) {
     if (sortMes && sortMes.key===key && sortMes.field===field) {
       if (sortDir==="desc") setSortDir("asc");
-      else { setSortMes(null); setSortDir("desc"); } // third click = reset
-    } else {
-      setSortMes({key,field}); setSortDir("desc");
-    }
+      else { setSortMes(null); setSortDir("desc"); }
+    } else { setSortMes({key,field}); setSortDir("desc"); }
   }
-
   function startEdit(execId, mesKey, field, currentVal) {
-    setEditing({execId, mesKey, field});
-    setEditVal(String(currentVal));
-    setSaved(false);
+    setEditing({execId, mesKey, field}); setEditVal(String(currentVal)); setSaved(false);
   }
-
   function saveEdit() {
     if (!editing) return;
     const {execId, mesKey, field} = editing;
@@ -4909,13 +5020,9 @@ function ExcelDataView({ equipo, setEquipo, info }) {
       if (v.id!==execId) return v;
       var hist = Object.assign({}, v.historial||{});
       var mes  = Object.assign({uf:0,dps:0,dpsVenta:0,conecta:0,hombres:0,mujeres:0,meta:v.metaUF}, hist[mesKey]||{});
-      mes[field] = newVal;
-      hist[mesKey] = mes;
+      mes[field] = newVal; hist[mesKey] = mes;
       var base = Object.assign({}, v, {historial:hist});
-      if (mesKey===info.mesKey) {
-        if (field==="uf")  base.uf  = newVal;
-        if (field==="dps") base.dps = newVal;
-      }
+      if (mesKey===info.mesKey) { if (field==="uf") base.uf=newVal; if (field==="dps") base.dps=newVal; }
       return base;
     });
     setEquipo(newEquipo);
@@ -4926,123 +5033,268 @@ function ExcelDataView({ equipo, setEquipo, info }) {
     setTimeout(function(){setSaved(false);},2000);
   }
 
+  // ── Borrar TODOS los meses ──
+  function borrarTodosLosMeses() {
+    if (!window.confirm("¿Seguro? Esto borrará los datos históricos de TODOS los meses para todo el equipo. Esta acción NO se puede deshacer.")) return;
+    setBorrandoTodos(true);
+    // Limpiar historial de cada ejecutivo en el equipo actual
+    var equipoLimpio = equipo.map(function(v) {
+      return Object.assign({}, v, { uf: 0, dps: 0, rep: [], historial: {} });
+    });
+    setEquipo(equipoLimpio);
+    // Borrar en Firebase todos los meses conocidos
+    var mesesABorrar = MESES_ORDEN.concat([info.mesKey]);
+    var promises = mesesABorrar.map(function(mk) {
+      if (window.__fbDb && window.__fbDoc && window.__fbSetDoc) {
+        return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",mk), {equipo: equipoLimpio.map(function(v){return Object.assign({},v,{uf:0,dps:0,rep:[],historial:{}});})});
+      }
+      return storageSet("equipo_" + mk, null);
+    });
+    Promise.all(promises).then(function() {
+      setBorrandoTodos(false); setBorradoOk(true);
+      setTimeout(function(){setBorradoOk(false);}, 4000);
+    }).catch(function(e) {
+      console.error("Error borrando meses:", e);
+      setBorrandoTodos(false);
+    });
+  }
+
+  // ── Cargar Excel ──
+  function handleExcelFile(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setExcelMsg("Leyendo archivo...");
+    setExcelOk(false);
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        // Parse with SheetJS if available, otherwise CSV fallback
+        var data = ev.target.result;
+        var filas = [];
+        if (window.XLSX) {
+          var wb = window.XLSX.read(data, {type:"binary"});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          filas = window.XLSX.utils.sheet_to_json(ws, {defval:""});
+        } else {
+          // CSV fallback
+          var lines2 = data.split(/\r?\n/);
+          var headers = lines2[0].split(",").map(function(h){return h.trim().toLowerCase();});
+          for (var i=1;i<lines2.length;i++) {
+            if (!lines2[i].trim()) continue;
+            var cols = lines2[i].split(",");
+            var obj = {};
+            headers.forEach(function(h,j){obj[h]=cols[j]?cols[j].trim():"";});
+            filas.push(obj);
+          }
+        }
+        if (filas.length === 0) { setExcelMsg("❌ No se encontraron datos en el archivo."); return; }
+        // Intentar mapear: busca columnas nombre, mes (YYYY-MM), uf, dps
+        var cambios = 0;
+        var nuevoEquipo = equipo.map(function(v) { return Object.assign({}, v, {historial: Object.assign({}, v.historial||{})}); });
+        filas.forEach(function(fila) {
+          var nombre = String(fila.nombre||fila.Nombre||fila.NOMBRE||"").trim().toUpperCase();
+          var mesKey2 = String(fila.mes||fila.Mes||fila.MES||fila.meskey||fila.MesKey||"").trim();
+          var uf = parseFloat(String(fila.uf||fila.UF||fila.Uf||"0").replace(",",".")) || 0;
+          var dps = parseInt(String(fila.dps||fila.DPS||fila.Dps||"0")) || 0;
+          if (!nombre || !mesKey2 || !/^\d{4}-\d{2}$/.test(mesKey2)) return;
+          nuevoEquipo.forEach(function(v) {
+            if (v.nombre.toUpperCase().indexOf(nombre) >= 0 || nombre.indexOf(v.nombre.toUpperCase()) >= 0) {
+              var hist = v.historial;
+              var mes = Object.assign({uf:0,dps:0,dpsVenta:0,conecta:0,hombres:0,mujeres:0}, hist[mesKey2]||{});
+              if (uf > 0) mes.uf = uf;
+              if (dps > 0) mes.dps = dps;
+              hist[mesKey2] = mes;
+              cambios++;
+            }
+          });
+        });
+        setEquipo(nuevoEquipo);
+        if (window.__fbDb && window.__fbDoc && window.__fbSetDoc) {
+          window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:nuevoEquipo});
+        }
+        setExcelOk(true);
+        setExcelMsg("✅ Cargado correctamente. " + cambios + " registros actualizados. Verifica los datos en la tabla.");
+      } catch(err) {
+        setExcelMsg("❌ Error al leer el archivo: " + err.message);
+      }
+    };
+    reader.onerror = function() { setExcelMsg("❌ No se pudo leer el archivo."); };
+    if (file.name.endsWith(".csv")) {
+      reader.readAsText(file);
+    } else {
+      if (!window.XLSX) {
+        // Load SheetJS dynamically
+        var script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+        script.onload = function() { reader.readAsBinaryString(file); };
+        script.onerror = function() { setExcelMsg("❌ No se pudo cargar el lector de Excel. Intenta con un archivo .csv"); };
+        document.head.appendChild(script);
+      } else {
+        reader.readAsBinaryString(file);
+      }
+    }
+  }
+
   function SortBtn({mk, field, label, color}) {
     var active = sortMes && sortMes.key===mk && sortMes.field===field;
-    return (
-      React.createElement('span', { onClick: function(){toggleSort(mk,field);},
-        style: {cursor:"pointer",fontSize:9,fontWeight:700,color:active?color:"#9CA3AF",
-          borderBottom:active?"1px solid "+color:"none",padding:"1px 2px",userSelect:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4576}}
-        , label, active?(sortDir==="desc"?" ↓":" ↑"):""
-      )
+    return React.createElement("span", { onClick: function(){toggleSort(mk,field);},
+      style: {cursor:"pointer",fontSize:9,fontWeight:700,color:active?color:"#9CA3AF",
+        borderBottom:active?"1px solid "+color:"none",padding:"1px 2px",userSelect:"none"}},
+      label, active?(sortDir==="desc"?" ↓":" ↑"):""
     );
   }
 
   function CellVal({execId, mesKey, field, value, color}) {
     var active = editing && editing.execId===execId && editing.mesKey===mesKey && editing.field===field;
-    if (active) return (
-      React.createElement('input', { type: "number", step: field==="uf"?"0.01":"1", min: "0", autoFocus: true,
-        value: editVal, onChange: function(e){setEditVal(e.target.value);},
-        onBlur: saveEdit,
-        onKeyDown: function(e){if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(null);},
-        style: {width:54,fontSize:12,fontWeight:700,border:"1.5px solid "+RD,borderRadius:4,padding:"2px 4px",textAlign:"center",outline:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4587}} )
-    );
-    return (
-      React.createElement('span', { onClick: function(){startEdit(execId,mesKey,field,value);},
-        style: {cursor:"pointer",fontWeight:700,color:value>0?color:"#D1D5DB",
-          borderBottom:"1px dashed #E5E7EB",padding:"0 2px",fontSize:12},
-        title: "Clic para editar"  , __self: this, __source: {fileName: _jsxFileName, lineNumber: 4594}}
-        , value>0?(field==="uf"?fmtUF(value):value):"—"
-      )
+    if (active) return React.createElement("input", { type:"number", step:field==="uf"?"0.01":"1", min:"0", autoFocus:true,
+      value:editVal, onChange:function(e){setEditVal(e.target.value);},
+      onBlur:saveEdit,
+      onKeyDown:function(e){if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(null);},
+      style:{width:54,fontSize:12,fontWeight:700,border:"1.5px solid "+RD,borderRadius:4,padding:"2px 4px",textAlign:"center",outline:"none"}});
+    return React.createElement("span", { onClick:function(){startEdit(execId,mesKey,field,value);},
+      style:{cursor:"pointer",fontWeight:700,color:value>0?color:"#D1D5DB",
+        borderBottom:"1px dashed #E5E7EB",padding:"0 2px",fontSize:12}, title:"Clic para editar"},
+      value>0?(field==="uf"?fmtUF(value):value):"—"
     );
   }
 
   var orden = getOrden();
+  var subBtnStyle = function(k) { return {padding:"8px 16px",border:"none",borderRadius:9,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,background:subVista===k?R:"#E5E7EB",color:subVista===k?"#fff":"#374151"}; };
 
-  return (
-    React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4606}}
-      , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4607}}, "📊 Historial Excel — Oct 2025 a Mar 2026"        )
-      , React.createElement('div', { style: {fontSize:12,color:"#9CA3AF",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4608}}, "Haz clic en un valor para editarlo. Haz clic en las flechas de cada mes para ordenar. Clic de nuevo para invertir. Tercer clic vuelve al orden original."
+  return React.createElement("div", { style:{background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.1)"}},
+    React.createElement("div", {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "📂 Carga de Datos Excel"),
+    React.createElement("div", {style:{fontSize:12,color:"#9CA3AF",marginBottom:18}}, "Consulta, edita, carga archivos o limpia el historial del equipo."),
 
-      )
-      , saved && React.createElement('div', { style: {fontSize:12,color:"#16A34A",fontWeight:700,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4611}}, "✅ Guardado" )
-      , sortMes && React.createElement('div', { style: {fontSize:12,color:"#D97706",fontWeight:700,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4612}}, "Ordenado por "
-          , MESES_LABEL[sortMes.key], " · "  , sortMes.field==="uf"?"UF":sortMes.field==="dps"?"DPS":"DPS c/Venta", " " , sortDir==="desc"?"↓ mayor a menor":"↑ menor a mayor", " · "  , React.createElement('span', { onClick: function(){setSortMes(null);setSortDir("desc");}, style: {cursor:"pointer",textDecoration:"underline",color:"#C41230"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4613}}, "Quitar filtro" )
-      )
-      , React.createElement('div', { style: {overflowX:"auto"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4615}}
-        , React.createElement('table', { style: {width:"100%",borderCollapse:"collapse",fontSize:11}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4616}}
-          , React.createElement('thead', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4617}}
-            , React.createElement('tr', { style: {background:"#F8FAFC"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4618}}
-              , React.createElement('th', { style: {textAlign:"left",padding:"8px 10px",fontWeight:700,color:"#374151",borderBottom:"2px solid #E5E7EB",minWidth:140,position:"sticky",left:0,background:"#F8FAFC",zIndex:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4619}}, "Ejecutivo")
-              , MESES_ORDEN.map(function(mk){
-                return React.createElement('th', { key: mk, style: {textAlign:"center",padding:"6px 4px",fontWeight:700,color:"#374151",borderBottom:"2px solid #E5E7EB",minWidth:110}, colSpan: 3, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4621}}
-                  , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4622}}, MESES_LABEL[mk])
-                  , React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:6,marginTop:2}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4623}}
-                    , React.createElement(SortBtn, { mk: mk, field: "uf",       label: "UF↕",  color: "#D97706", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4624}} )
-                    , React.createElement(SortBtn, { mk: mk, field: "dps",      label: "DPS↕", color: "#16A34A", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4625}} )
-                    , React.createElement(SortBtn, { mk: mk, field: "dpsVenta", label: "c/Vta↕", color: "#059669", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4626}} )
+    // Sub-tabs
+    React.createElement("div", {style:{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}},
+      React.createElement("button", {onClick:function(){setSubVista("historial");}, style:subBtnStyle("historial")}, "📊 Ver Historial"),
+      React.createElement("button", {onClick:function(){setSubVista("cargar");},    style:subBtnStyle("cargar")},    "📥 Cargar Excel"),
+      React.createElement("button", {onClick:function(){setSubVista("borrar");},    style:subBtnStyle("borrar")},    "🗑️ Borrar Datos")
+    ),
+
+    // ── Sub-vista: Historial ──
+    subVista==="historial" && React.createElement("div", null,
+      React.createElement("div", {style:{fontSize:13,color:"#6B7280",marginBottom:8}},
+        "Haz clic en un valor para editarlo. Clic en las flechas para ordenar."
+      ),
+      saved && React.createElement("div", {style:{fontSize:12,color:"#16A34A",fontWeight:700,marginBottom:8}}, "✅ Guardado"),
+      sortMes && React.createElement("div", {style:{fontSize:12,color:"#D97706",fontWeight:700,marginBottom:8}},
+        "Ordenado por ", MESES_LABEL[sortMes.key], " · ", sortMes.field==="uf"?"UF":sortMes.field==="dps"?"DPS":"DPS c/Venta",
+        " ", sortDir==="desc"?"↓ mayor a menor":"↑ menor a mayor", " · ",
+        React.createElement("span", {onClick:function(){setSortMes(null);setSortDir("desc");}, style:{cursor:"pointer",textDecoration:"underline",color:RD}}, "Quitar filtro")
+      ),
+      React.createElement("div", {style:{overflowX:"auto"}},
+        React.createElement("table", {style:{width:"100%",borderCollapse:"collapse",fontSize:11}},
+          React.createElement("thead", null,
+            React.createElement("tr", {style:{background:"#F8FAFC"}},
+              React.createElement("th", {style:{textAlign:"left",padding:"8px 10px",fontWeight:700,color:"#374151",borderBottom:"2px solid #E5E7EB",minWidth:140,position:"sticky",left:0,background:"#F8FAFC",zIndex:1}}, "Ejecutivo"),
+              MESES_ORDEN.map(function(mk){
+                return React.createElement("th", {key:mk,style:{textAlign:"center",padding:"6px 4px",fontWeight:700,color:"#374151",borderBottom:"2px solid #E5E7EB",minWidth:110},colSpan:3},
+                  React.createElement("div", null, MESES_LABEL[mk]),
+                  React.createElement("div", {style:{display:"flex",justifyContent:"center",gap:6,marginTop:2}},
+                    React.createElement(SortBtn, {mk:mk,field:"uf",label:"UF↕",color:"#D97706"}),
+                    React.createElement(SortBtn, {mk:mk,field:"dps",label:"DPS↕",color:"#16A34A"}),
+                    React.createElement(SortBtn, {mk:mk,field:"dpsVenta",label:"c/Vta↕",color:"#059669"})
                   )
                 );
               })
-            )
-            , React.createElement('tr', { style: {background:"#F8FAFC"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4631}}
-              , React.createElement('th', { style: {padding:"4px 10px",borderBottom:"1px solid #E5E7EB",position:"sticky",left:0,background:"#F8FAFC"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4632}})
-              , MESES_ORDEN.map(function(mk){
+            ),
+            React.createElement("tr", {style:{background:"#F8FAFC"}},
+              React.createElement("th", {style:{padding:"4px 10px",borderBottom:"1px solid #E5E7EB",position:"sticky",left:0,background:"#F8FAFC"}}),
+              MESES_ORDEN.map(function(mk){
                 return [
-                  React.createElement('th', { key: mk+"uf",  style: {padding:"4px 2px",textAlign:"center",fontSize:10,color:"#D97706",fontWeight:700,borderBottom:"1px solid #E5E7EB"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4635}}, "UF"),
-                  React.createElement('th', { key: mk+"dps", style: {padding:"4px 2px",textAlign:"center",fontSize:10,color:"#16A34A",fontWeight:700,borderBottom:"1px solid #E5E7EB"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4636}}, "DPS"),
-                  React.createElement('th', { key: mk+"dpv", style: {padding:"4px 2px",textAlign:"center",fontSize:10,color:"#059669",fontWeight:700,borderBottom:"1px solid #E5E7EB"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4637}}, "c/Vta"),
+                  React.createElement("th", {key:mk+"uf",  style:{padding:"4px 2px",textAlign:"center",fontSize:10,color:"#D97706",fontWeight:700,borderBottom:"1px solid #E5E7EB"}}, "UF"),
+                  React.createElement("th", {key:mk+"dps", style:{padding:"4px 2px",textAlign:"center",fontSize:10,color:"#16A34A",fontWeight:700,borderBottom:"1px solid #E5E7EB"}}, "DPS"),
+                  React.createElement("th", {key:mk+"dpv", style:{padding:"4px 2px",textAlign:"center",fontSize:10,color:"#059669",fontWeight:700,borderBottom:"1px solid #E5E7EB"}}, "c/Vta"),
                 ];
               })
             )
-          )
-          , React.createElement('tbody', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4642}}
-            , orden.map(function(origIdx, rowIdx) {
-              var v    = equipo[origIdx];
+          ),
+          React.createElement("tbody", null,
+            orden.map(function(origIdx, rowIdx) {
+              var v = equipo[origIdx];
               var hist = v.historial || {};
-              var isAlt = rowIdx % 2 === 1;
-              return (
-                React.createElement('tr', { key: v.id, style: {background:isAlt?"#F9FAFB":"#fff",borderBottom:"1px solid #F3F4F6"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4648}}
-                  , React.createElement('td', { style: {padding:"9px 10px",fontWeight:600,color:"#374151",fontSize:11,position:"sticky",left:0,background:isAlt?"#F9FAFB":"#fff",borderRight:"1px solid #E5E7EB"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4649}}
-                    , sortMes ? React.createElement('span', { style: {fontSize:10,color:"#9CA3AF",marginRight:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4650}}, "#", rowIdx+1) : null
-                    , v.nombre
-                  )
-                  , MESES_ORDEN.map(function(mk){
-                    // For historical months: merge Excel base data with any manual edits
-                    var excelBase = (HISTORIAL_EXCEL[v.id]||HISTORIAL_EXCEL[String(v.id)]||{})[mk] || {};
-                    var manualEdit = hist[mk] || {};
-                    var d    = Object.keys(manualEdit).length > 0 ? manualEdit : excelBase;
-                    var uf   = d.uf   || 0;
-                    var dps  = d.dps  || 0;
-                    var dpsV = d.dpsVenta || 0;
-                    var pct  = v.metaUF>0 ? Math.round((uf/v.metaUF)*100) : 0;
-                    var col  = pct>=100?"#16A34A":pct>=60?"#D97706":uf>0?"#DC2626":"#9CA3AF";
-                    return [
-                      React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4664}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "uf",       value: uf,   color: col, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4664}}     )),
-                      React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4665}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dps",      value: dps,  color: "#16A34A", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4665}} )),
-                      React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4666}}, React.createElement(CellVal, { execId: v.id, mesKey: mk, field: "dpsVenta", value: dpsV, color: "#059669", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4666}} )),
-                    ];
-                  })
-                )
+              var isAlt = rowIdx%2===1;
+              return React.createElement("tr", {key:v.id,style:{background:isAlt?"#F9FAFB":"#fff",borderBottom:"1px solid #F3F4F6"}},
+                React.createElement("td", {style:{padding:"9px 10px",fontWeight:600,color:"#374151",fontSize:11,position:"sticky",left:0,background:isAlt?"#F9FAFB":"#fff",borderRight:"1px solid #E5E7EB"}},
+                  sortMes ? React.createElement("span", {style:{fontSize:10,color:"#9CA3AF",marginRight:4}}, "#", rowIdx+1) : null,
+                  v.nombre
+                ),
+                MESES_ORDEN.map(function(mk){
+                  var excelBase = (HISTORIAL_EXCEL[v.id]||HISTORIAL_EXCEL[String(v.id)]||{})[mk]||{};
+                  var manualEdit = hist[mk]||{};
+                  var d = Object.keys(manualEdit).length>0 ? manualEdit : excelBase;
+                  var uf=d.uf||0, dps=d.dps||0, dpsV=d.dpsVenta||0;
+                  var pct = v.metaUF>0 ? Math.round((uf/v.metaUF)*100) : 0;
+                  var col = pct>=100?"#16A34A":pct>=60?"#D97706":uf>0?"#DC2626":"#9CA3AF";
+                  return [
+                    React.createElement("td", {key:mk+"uf",  style:{padding:"9px 2px",textAlign:"center"}}, React.createElement(CellVal, {execId:v.id,mesKey:mk,field:"uf",      value:uf,  color:col})),
+                    React.createElement("td", {key:mk+"dps", style:{padding:"9px 2px",textAlign:"center"}}, React.createElement(CellVal, {execId:v.id,mesKey:mk,field:"dps",     value:dps, color:"#16A34A"})),
+                    React.createElement("td", {key:mk+"dpv", style:{padding:"9px 2px",textAlign:"center"}}, React.createElement(CellVal, {execId:v.id,mesKey:mk,field:"dpsVenta",value:dpsV,color:"#059669"})),
+                  ];
+                })
               );
             })
-          )
-          , React.createElement('tfoot', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4673}}
-            , React.createElement('tr', { style: {background:"#FFF5F6",fontWeight:900,borderTop:"2px solid rgba(233,7,41,.2)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4674}}
-              , React.createElement('td', { style: {padding:"9px 10px",color:RD,fontSize:11,position:"sticky",left:0,background:"#FFF5F6"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4675}}, "TOTAL")
-              , MESES_ORDEN.map(function(mk){
-                // Use HISTORIAL_EXCEL directly as source of truth for historical totals
+          ),
+          React.createElement("tfoot", null,
+            React.createElement("tr", {style:{background:"#FFF5F6",fontWeight:900,borderTop:"2px solid rgba(233,7,41,.2)"}},
+              React.createElement("td", {style:{padding:"9px 10px",color:RD,fontSize:11,position:"sticky",left:0,background:"#FFF5F6"}}, "TOTAL"),
+              MESES_ORDEN.map(function(mk){
                 var tUF  = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).uf||0);},0);
                 var tDPS = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).dps||0);},0);
                 var tDPV = Object.values(HISTORIAL_EXCEL).reduce(function(s,h){return s+((h[mk]||{}).dpsVenta||0);},0);
                 return [
-                  React.createElement('td', { key: mk+"uf",  style: {padding:"9px 2px",textAlign:"center",color:RD,fontWeight:900,fontSize:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4682}}, fmtUF(tUF)),
-                  React.createElement('td', { key: mk+"dps", style: {padding:"9px 2px",textAlign:"center",color:"#16A34A",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4683}}, tDPS),
-                  React.createElement('td', { key: mk+"dpv", style: {padding:"9px 2px",textAlign:"center",color:"#059669",fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4684}}, tDPV),
+                  React.createElement("td", {key:mk+"uf",  style:{padding:"9px 2px",textAlign:"center",color:RD,fontWeight:900,fontSize:12}}, fmtUF(tUF)),
+                  React.createElement("td", {key:mk+"dps", style:{padding:"9px 2px",textAlign:"center",color:"#16A34A",fontWeight:900}}, tDPS),
+                  React.createElement("td", {key:mk+"dpv", style:{padding:"9px 2px",textAlign:"center",color:"#059669",fontWeight:900}}, tDPV),
                 ];
               })
             )
           )
         )
+      )
+    ),
+
+    // ── Sub-vista: Cargar Excel ──
+    subVista==="cargar" && React.createElement("div", {style:{maxWidth:560}},
+      React.createElement("div", {style:{fontSize:14,fontWeight:700,color:"#374151",marginBottom:8}}, "📥 Cargar archivo Excel o CSV"),
+      React.createElement("div", {style:{background:"#FFFBEB",border:"1px solid #FCD34D",borderRadius:12,padding:"14px 18px",marginBottom:20,fontSize:13,color:"#92400E",lineHeight:1.6}},
+        "El archivo debe tener columnas: ",
+        React.createElement("strong", null, "nombre, mes, uf, dps"),
+        React.createElement("br",null),
+        "• nombre: nombre del ejecutivo (no requiere ser exacto, se busca coincidencia)",
+        React.createElement("br",null),
+        "• mes: formato YYYY-MM (ej: 2026-04)",
+        React.createElement("br",null),
+        "• uf: UF del mes",
+        React.createElement("br",null),
+        "• dps: DPS del mes",
+        React.createElement("br",null),
+        "Formatos aceptados: .xlsx, .xls, .csv"
+      ),
+      React.createElement("label", {style:{display:"block",background:R,color:"#fff",borderRadius:12,padding:"14px 24px",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"center",marginBottom:14}},
+        "📂 Seleccionar archivo",
+        React.createElement("input", {type:"file", accept:".xlsx,.xls,.csv", onChange:handleExcelFile, style:{display:"none"}})
+      ),
+      excelMsg && React.createElement("div", {style:{borderRadius:10,padding:"12px 16px",fontSize:13,fontWeight:600,background:excelOk?"#DCFCE7":"#FEF2F2",color:excelOk?"#15803D":"#DC2626",border:"1px solid "+(excelOk?"#86EFAC":"#FECACA")}},
+        excelMsg
+      )
+    ),
+
+    // ── Sub-vista: Borrar Datos ──
+    subVista==="borrar" && React.createElement("div", {style:{maxWidth:520}},
+      React.createElement("div", {style:{fontSize:15,fontWeight:700,color:"#374151",marginBottom:16}}, "🗑️ Opciones de borrado"),
+      React.createElement("div", {style:{background:"#FEF2F2",border:"2px solid #FECACA",borderRadius:16,padding:"22px 24px",marginBottom:16}},
+        React.createElement("div", {style:{fontSize:14,fontWeight:800,color:"#991B1B",marginBottom:6}}, "⚠️ Borrar TODOS los meses"),
+        React.createElement("div", {style:{fontSize:13,color:"#6B7280",marginBottom:16,lineHeight:1.5}},
+          "Elimina los datos históricos de todos los meses para todo el equipo. Incluye registros de UF, DPS y reportes. Esta acción es irreversible."
+        ),
+        borradoOk && React.createElement("div", {style:{background:"#DCFCE7",color:"#15803D",borderRadius:8,padding:"10px 14px",fontSize:13,fontWeight:700,marginBottom:12}}, "✅ Todos los datos han sido borrados."),
+        React.createElement("button", {
+          onClick: borrarTodosLosMeses,
+          disabled: borrandoTodos,
+          style:{background:borrandoTodos?"#9CA3AF":"#DC2626",color:"#fff",border:"none",borderRadius:10,padding:"12px 24px",fontSize:14,fontWeight:700,cursor:borrandoTodos?"not-allowed":"pointer",width:"100%"}
+        }, borrandoTodos ? "Borrando..." : "🗑️ Borrar todos los meses del historial")
       )
     )
   );
