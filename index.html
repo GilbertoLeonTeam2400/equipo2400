@@ -3738,7 +3738,7 @@ function abrirCalendario(cliente) {
 
                     )
                     , React.createElement('button', { onClick: salir, style: {background:"#FEE2E2",color:R,border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3679}}, "Cerrar sesion" )
-            , React.createElement('button', { onClick: limpiarMes, style: {background:"#1F2937",color:"#fff",border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3680}}, "🗑️ Limpiar mes"  )
+            
                   )
                 )
 
@@ -4476,11 +4476,12 @@ function MetasIndividualesView({ equipo, setEquipo }) {
   // Local copy of metas to edit
   var [metas, setMetas] = useState(function() {
     return equipo.map(function(v) {
+      // Metas semanales: lo que se compromete a lograr CADA semana (no acumulado)
       var ms = v.metasSemanas || [
-        Math.round(v.metaUF * 0.20),
-        Math.round(v.metaUF * 0.45),
-        Math.round(v.metaUF * 0.72),
-        v.metaUF
+        Math.round(v.metaUF * 0.25),
+        Math.round(v.metaUF * 0.25),
+        Math.round(v.metaUF * 0.25),
+        Math.round(v.metaUF * 0.25)
       ];
       return { id: v.id, nombre: v.nombre, metaMes: v.metaUF, semanas: ms.slice(0,4) };
     });
@@ -4527,16 +4528,16 @@ function MetasIndividualesView({ equipo, setEquipo }) {
     React.createElement('div', { style: { fontSize: 18, fontWeight: 900, color: RD, marginBottom: 4 } },
       "📋 Metas individuales por semana y mes"),
     React.createElement('div', { style: { fontSize: 12, color: "#9CA3AF", marginBottom: 20 } },
-      "Define la meta de cierre de cada semana (acumulada) y la meta final de mes para cada ejecutivo."),
+      "Define lo que cada ejecutivo se compromete a lograr en cada semana (meta semanal, no acumulada) y la meta total del mes."),
     React.createElement('div', { style: { overflowX: "auto" } },
       React.createElement('table', { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
         React.createElement('thead', null,
           React.createElement('tr', null,
             React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: "left", paddingLeft: 12 }) }, "Ejecutivo"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[0] }) }, "🎯 Sem 1"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[1] }) }, "🎯 Sem 2"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[2] }) }, "🎯 Sem 3"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[3] }) }, "🎯 Sem 4"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[0] }) }, "Sem 1 (UF)"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[1] }) }, "Sem 2 (UF)"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[2] }) }, "Sem 3 (UF)"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[3] }) }, "Sem 4 (UF)"),
             React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900 }) }, "🏁 META MES")
           )
         ),
@@ -4977,10 +4978,146 @@ function AgentesEnCeroView({ equipo, info }) {
 
 
 // ── Vista de datos Excel por ejecutivo ───────────────────────────
+// ── Borrar Meses View ─────────────────────────────────────────────
+function BorrarMesesView({ equipo, setEquipo, info, MESES_ORDEN, MESES_LABEL }) {
+  var RD = "#C41230";
+  // Build list of all months: los 6 meses dinámicos + mes actual
+  var todosMeses = (function() {
+    var lista = [];
+    for (var i = 1; i <= 6; i++) {
+      var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      var mk = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+      var lbl = d.toLocaleString("es-CL",{month:"long",year:"numeric"});
+      lista.push({ mk: mk, label: lbl });
+    }
+    // Agregar mes actual al final
+    lista.push({ mk: info.mesKey, label: info.mes + " (mes en curso)" });
+    return lista;
+  })();
+
+  var [seleccionados, setSeleccionados] = useState({});
+  var [borrando, setBorrando] = useState(false);
+  var [borradoOk, setBorradoOk] = useState(false);
+  var [borradoMsg, setBorradoMsg] = useState("");
+
+  function toggleMes(mk) {
+    setSeleccionados(function(prev) {
+      var next = Object.assign({}, prev);
+      next[mk] = !next[mk];
+      return next;
+    });
+  }
+  function seleccionarTodos() {
+    var next = {};
+    todosMeses.forEach(function(m) { next[m.mk] = true; });
+    setSeleccionados(next);
+  }
+  function deseleccionarTodos() { setSeleccionados({}); }
+
+  var mesesElegidos = todosMeses.filter(function(m) { return seleccionados[m.mk]; });
+
+  function borrarSeleccionados() {
+    if (mesesElegidos.length === 0) return;
+    var nombres = mesesElegidos.map(function(m) { return m.label; }).join(", ");
+    if (!window.confirm("¿Borrar los datos de: " + nombres + "?
+Esta acción no se puede deshacer.")) return;
+    setBorrando(true);
+    var mesTocarMesActual = seleccionados[info.mesKey];
+    var nuevoEquipo = equipo.map(function(v) {
+      var hist = Object.assign({}, v.historial || {});
+      mesesElegidos.forEach(function(m) { delete hist[m.mk]; });
+      var base = Object.assign({}, v, { historial: hist });
+      if (mesTocarMesActual) { base.uf = 0; base.dps = 0; base.rep = []; }
+      return base;
+    });
+    setEquipo(nuevoEquipo);
+    var promises = mesesElegidos.map(function(m) {
+      if (window.__fbDb && window.__fbDoc && window.__fbSetDoc) {
+        if (m.mk === info.mesKey) {
+          return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",m.mk), {equipo: nuevoEquipo});
+        } else {
+          // Para meses anteriores, guardar equipo limpio de ese mes
+          var limpio = nuevoEquipo.map(function(v) { return Object.assign({},v,{uf:0,dps:0,rep:[]}); });
+          return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",m.mk), {equipo: limpio});
+        }
+      }
+      return Promise.resolve();
+    });
+    Promise.all(promises).then(function() {
+      setBorrando(false);
+      setBorradoOk(true);
+      setBorradoMsg("✅ Datos borrados: " + nombres);
+      setSeleccionados({});
+      setTimeout(function() { setBorradoOk(false); setBorradoMsg(""); }, 5000);
+    }).catch(function(e) {
+      console.error("Error borrando:", e);
+      setBorrando(false);
+    });
+  }
+
+  return React.createElement("div", { style: { maxWidth: 560 } },
+    React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 6 } }, "🗑️ Selecciona los meses a borrar"),
+    React.createElement("div", { style: { fontSize: 13, color: "#6B7280", marginBottom: 16, lineHeight: 1.5 } },
+      "Marca los meses que deseas limpiar. Se borrarán UF, DPS y reportes de esos meses para todo el equipo."
+    ),
+    React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 16 } },
+      React.createElement("button", { onClick: seleccionarTodos, style: { padding: "6px 14px", fontSize: 12, fontWeight: 700, borderRadius: 8, border: "1.5px solid #E5E7EB", background: "#F9FAFB", cursor: "pointer", fontFamily: "inherit" } }, "Seleccionar todos"),
+      React.createElement("button", { onClick: deseleccionarTodos, style: { padding: "6px 14px", fontSize: 12, fontWeight: 700, borderRadius: 8, border: "1.5px solid #E5E7EB", background: "#F9FAFB", cursor: "pointer", fontFamily: "inherit" } }, "Deseleccionar todos")
+    ),
+    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 } },
+      todosMeses.map(function(m) {
+        var isActual = m.mk === info.mesKey;
+        var sel = !!seleccionados[m.mk];
+        return React.createElement("label", { key: m.mk, style: {
+          display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+          borderRadius: 12, border: "2px solid " + (sel ? (isActual ? "#DC2626" : RD) : "#E5E7EB"),
+          background: sel ? (isActual ? "#FEF2F2" : "#FFF0F2") : "#fff",
+          cursor: "pointer", transition: "all .15s"
+        }},
+          React.createElement("input", { type: "checkbox", checked: sel, onChange: function() { toggleMes(m.mk); },
+            style: { width: 18, height: 18, accentColor: RD, cursor: "pointer" }
+          }),
+          React.createElement("span", { style: { fontWeight: 700, fontSize: 14, color: isActual ? "#DC2626" : "#374151", flex: 1 } }, m.label),
+          isActual && React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#DC2626", background: "#FEE2E2", borderRadius: 99, padding: "2px 10px" } }, "MES ACTUAL")
+        );
+      })
+    ),
+    borradoOk && React.createElement("div", { style: { background: "#DCFCE7", color: "#15803D", borderRadius: 10, padding: "12px 16px", fontSize: 13, fontWeight: 700, marginBottom: 14 } }, borradoMsg),
+    React.createElement("button", {
+      onClick: borrarSeleccionados,
+      disabled: mesesElegidos.length === 0 || borrando,
+      style: {
+        width: "100%", padding: "14px", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700,
+        cursor: mesesElegidos.length === 0 || borrando ? "not-allowed" : "pointer",
+        background: mesesElegidos.length === 0 || borrando ? "#9CA3AF" : "#DC2626",
+        color: "#fff", transition: "background .2s"
+      }
+    }, borrando ? "Borrando..." : mesesElegidos.length === 0 ? "Selecciona al menos un mes" : "🗑️ Borrar " + mesesElegidos.length + " mes(es) seleccionado(s)")
+  );
+}
+
+
 function ExcelDataView({ equipo, setEquipo, info }) {
   const RD = "#C41230", R = "#E9192A";
-  const MESES_ORDEN  = ["2025-10","2025-11","2025-12","2026-01","2026-02","2026-03"];
-  const MESES_LABEL  = {"2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25","2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26"};
+  // Últimos 6 meses dinámicos (sin incluir el mes en curso)
+  const MESES_ORDEN = (function() {
+    var meses = [];
+    for (var i = 1; i <= 6; i++) {
+      var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      meses.push(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"));
+    }
+    return meses;
+  })();
+  const MESES_LABEL = (function() {
+    var labels = {};
+    MESES_ORDEN.forEach(function(mk) {
+      var parts = mk.split("-");
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1);
+      var mes = d.toLocaleString("es-CL",{month:"short"});
+      labels[mk] = mes.charAt(0).toUpperCase()+mes.slice(1)+" "+String(parts[0]).slice(2);
+    });
+    return labels;
+  })();
 
   const [subVista, setSubVista] = React.useState("historial");
   const [editing,  setEditing]  = React.useState(null);
@@ -4991,9 +5128,7 @@ function ExcelDataView({ equipo, setEquipo, info }) {
   // Excel upload state
   const [excelMsg, setExcelMsg] = React.useState("");
   const [excelOk,  setExcelOk]  = React.useState(false);
-  // Borrar todos state
-  const [borrandoTodos, setBorrandoTodos] = React.useState(false);
-  const [borradoOk,     setBorradoOk]     = React.useState(false);
+
 
   function getOrden() {
     if (!sortMes) return equipo.map(function(_,i){return i;});
@@ -5033,31 +5168,7 @@ function ExcelDataView({ equipo, setEquipo, info }) {
     setTimeout(function(){setSaved(false);},2000);
   }
 
-  // ── Borrar TODOS los meses ──
-  function borrarTodosLosMeses() {
-    if (!window.confirm("¿Seguro? Esto borrará los datos históricos de TODOS los meses para todo el equipo. Esta acción NO se puede deshacer.")) return;
-    setBorrandoTodos(true);
-    // Limpiar historial de cada ejecutivo en el equipo actual
-    var equipoLimpio = equipo.map(function(v) {
-      return Object.assign({}, v, { uf: 0, dps: 0, rep: [], historial: {} });
-    });
-    setEquipo(equipoLimpio);
-    // Borrar en Firebase todos los meses conocidos
-    var mesesABorrar = MESES_ORDEN.concat([info.mesKey]);
-    var promises = mesesABorrar.map(function(mk) {
-      if (window.__fbDb && window.__fbDoc && window.__fbSetDoc) {
-        return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",mk), {equipo: equipoLimpio.map(function(v){return Object.assign({},v,{uf:0,dps:0,rep:[],historial:{}});})});
-      }
-      return storageSet("equipo_" + mk, null);
-    });
-    Promise.all(promises).then(function() {
-      setBorrandoTodos(false); setBorradoOk(true);
-      setTimeout(function(){setBorradoOk(false);}, 4000);
-    }).catch(function(e) {
-      console.error("Error borrando meses:", e);
-      setBorrandoTodos(false);
-    });
-  }
+
 
   // ── Cargar Excel ──
   function handleExcelFile(e) {
@@ -5095,7 +5206,8 @@ function ExcelDataView({ equipo, setEquipo, info }) {
           var nombre = String(fila.nombre||fila.Nombre||fila.NOMBRE||"").trim().toUpperCase();
           var mesKey2 = String(fila.mes||fila.Mes||fila.MES||fila.meskey||fila.MesKey||"").trim();
           var uf = parseFloat(String(fila.uf||fila.UF||fila.Uf||"0").replace(",",".")) || 0;
-          var dps = parseInt(String(fila.dps||fila.DPS||fila.Dps||"0")) || 0;
+          var dps = parseInt(String(fila.dps_total||fila.DPS_TOTAL||fila.dps||fila.DPS||fila.Dps||"0")) || 0;
+          var dpsVenta = parseInt(String(fila.dps_venta||fila.DPS_VENTA||fila.dpsVenta||fila.dpsVenta||"0")) || 0;
           if (!nombre || !mesKey2 || !/^\d{4}-\d{2}$/.test(mesKey2)) return;
           nuevoEquipo.forEach(function(v) {
             if (v.nombre.toUpperCase().indexOf(nombre) >= 0 || nombre.indexOf(v.nombre.toUpperCase()) >= 0) {
@@ -5103,6 +5215,7 @@ function ExcelDataView({ equipo, setEquipo, info }) {
               var mes = Object.assign({uf:0,dps:0,dpsVenta:0,conecta:0,hombres:0,mujeres:0}, hist[mesKey2]||{});
               if (uf > 0) mes.uf = uf;
               if (dps > 0) mes.dps = dps;
+              if (dpsVenta > 0) mes.dpsVenta = dpsVenta;
               hist[mesKey2] = mes;
               cambios++;
             }
@@ -5259,8 +5372,8 @@ function ExcelDataView({ equipo, setEquipo, info }) {
     subVista==="cargar" && React.createElement("div", {style:{maxWidth:560}},
       React.createElement("div", {style:{fontSize:14,fontWeight:700,color:"#374151",marginBottom:8}}, "📥 Cargar archivo Excel o CSV"),
       React.createElement("div", {style:{background:"#FFFBEB",border:"1px solid #FCD34D",borderRadius:12,padding:"14px 18px",marginBottom:20,fontSize:13,color:"#92400E",lineHeight:1.6}},
-        "El archivo debe tener columnas: ",
-        React.createElement("strong", null, "nombre, mes, uf, dps"),
+        "El archivo debe tener las siguientes columnas: ",
+        React.createElement("strong", null, "nombre, mes, uf, dps_total, dps_venta"),
         React.createElement("br",null),
         "• nombre: nombre del ejecutivo (no requiere ser exacto, se busca coincidencia)",
         React.createElement("br",null),
@@ -5268,7 +5381,9 @@ function ExcelDataView({ equipo, setEquipo, info }) {
         React.createElement("br",null),
         "• uf: UF del mes",
         React.createElement("br",null),
-        "• dps: DPS del mes",
+        "• dps_total: total de DPS realizadas",
+        React.createElement("br",null),
+        "• dps_venta: DPS con venta (cierre)",
         React.createElement("br",null),
         "Formatos aceptados: .xlsx, .xls, .csv"
       ),
@@ -5282,21 +5397,10 @@ function ExcelDataView({ equipo, setEquipo, info }) {
     ),
 
     // ── Sub-vista: Borrar Datos ──
-    subVista==="borrar" && React.createElement("div", {style:{maxWidth:520}},
-      React.createElement("div", {style:{fontSize:15,fontWeight:700,color:"#374151",marginBottom:16}}, "🗑️ Opciones de borrado"),
-      React.createElement("div", {style:{background:"#FEF2F2",border:"2px solid #FECACA",borderRadius:16,padding:"22px 24px",marginBottom:16}},
-        React.createElement("div", {style:{fontSize:14,fontWeight:800,color:"#991B1B",marginBottom:6}}, "⚠️ Borrar TODOS los meses"),
-        React.createElement("div", {style:{fontSize:13,color:"#6B7280",marginBottom:16,lineHeight:1.5}},
-          "Elimina los datos históricos de todos los meses para todo el equipo. Incluye registros de UF, DPS y reportes. Esta acción es irreversible."
-        ),
-        borradoOk && React.createElement("div", {style:{background:"#DCFCE7",color:"#15803D",borderRadius:8,padding:"10px 14px",fontSize:13,fontWeight:700,marginBottom:12}}, "✅ Todos los datos han sido borrados."),
-        React.createElement("button", {
-          onClick: borrarTodosLosMeses,
-          disabled: borrandoTodos,
-          style:{background:borrandoTodos?"#9CA3AF":"#DC2626",color:"#fff",border:"none",borderRadius:10,padding:"12px 24px",fontSize:14,fontWeight:700,cursor:borrandoTodos?"not-allowed":"pointer",width:"100%"}
-        }, borrandoTodos ? "Borrando..." : "🗑️ Borrar todos los meses del historial")
-      )
-    )
+    subVista==="borrar" && React.createElement(BorrarMesesView, {
+      equipo: equipo, setEquipo: setEquipo, info: info,
+      MESES_ORDEN: MESES_ORDEN, MESES_LABEL: MESES_LABEL
+    })
   );
 }
 
