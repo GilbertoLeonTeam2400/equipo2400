@@ -2566,17 +2566,21 @@ function FunnelConversion({ equipo }) {
 }
 
 // ── Indicador de conexion Firebase ───────────────────────────────
-function StatusFirebase({ sincronizado }) {
+function StatusFirebase({ sincronizado, error }) {
   if (!window.__fbDb) return (
-    React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:5,background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#92400E"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2484}}
-      , React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:"#F59E0B",display:"inline-block"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2485}} ), "Local (sin Firebase)"
-
+    React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:5,background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#92400E"}}
+      , React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:"#F59E0B",display:"inline-block"}} ), "Local (sin Firebase)"
+    )
+  );
+  if (error) return (
+    React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:5,background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#DC2626"}}
+      , React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:"#EF4444",display:"inline-block"}} ), "Sin conexion — revisa tu red"
     )
   );
   return (
-    React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:5,background:sincronizado?"#DCFCE7":"#FEF2F2",border:"1px solid "+(sincronizado?"#86EFAC":"#FCA5A5"),borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:sincronizado?"#15803D":"#DC2626"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2490}}
-      , React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:sincronizado?"#22C55E":"#EF4444",display:"inline-block",animation:sincronizado?"pulse 2s infinite":"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2491}} )
-      , sincronizado ? "Sincronizado en tiempo real" : "Sincronizando..."
+    React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:5,background:sincronizado?"#DCFCE7":"#FEF3C7",border:"1px solid "+(sincronizado?"#86EFAC":"#FCD34D"),borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:sincronizado?"#15803D":"#92400E"}}
+      , React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:sincronizado?"#22C55E":"#F59E0B",display:"inline-block",animation:"pulse 2s infinite"}} )
+      , sincronizado ? "Sincronizado en tiempo real" : "Conectando con Firebase..."
     )
   );
 }
@@ -2608,6 +2612,7 @@ function abrirCalendario(cliente) {
   const [loaded,     setLoaded]     = useState(false);
 
   const [sincronizado, setSincronizado] = useState(false);
+  const [fbError,     setFbError]     = useState(false);
   const [metaEquipo,  setMetaEquipo]  = useState(550);
   META_UF = metaEquipo; // Sobreescribir la variable global con el estado
   const skipSnapshot = React.useRef(false);
@@ -2624,12 +2629,12 @@ function abrirCalendario(cliente) {
           const d = snapData.equipo;
           if (d && Array.isArray(d)) {
             // Merge HISTORIAL_EXCEL for any months not already in Firebase data
-            const merged = d.map(function(v) {
+            var merged = d.map(function(v) {
               // v.id from Firebase may be number or string - use String() to be safe
-              const excelHist = HISTORIAL_EXCEL[v.id] || HISTORIAL_EXCEL[String(v.id)] || {};
-              const currentHist = v.historial || {};
+              var excelHist = HISTORIAL_EXCEL[v.id] || HISTORIAL_EXCEL[String(v.id)] || {};
+              var currentHist = v.historial || {};
               // Excel months are base data; Firebase months (from manual edits) take priority
-              const mergedHist = Object.assign({}, excelHist, currentHist);
+              var mergedHist = Object.assign({}, excelHist, currentHist);
               return Object.assign({}, v, { historial: mergedHist });
             });
             console.log("[LOAD] Firebase datos recibidos con historial Excel");
@@ -2643,11 +2648,27 @@ function abrirCalendario(cliente) {
           // No Firebase data yet - equipo already initialized with HISTORIAL_EXCEL
         }
         setLoaded(true); setSincronizado(true);
-      }, function() {
-        storageGet(key).then(function(d){if(d&&Array.isArray(d))d = d.map(function(x){ return Object.assign({rep:[]}, x); });
-      setEquipo(d); setLoaded(true);});
+      }, function(err) {
+        console.error("[LOAD] Firebase onSnapshot error:", err);
+        setFbError(true);
+        storageGet(key).then(function(d){
+          if(d && Array.isArray(d)) {
+            var fallback = d.map(function(x){ return Object.assign({rep:[]}, x); });
+            setEquipo(fallback);
+          }
+          setLoaded(true);
+          setSincronizado(false);
+        });
       });
-      return unsub;
+      // Timeout: si en 8 segundos no llega respuesta, mostrar error
+      var fbTimeout = setTimeout(function() {
+        if (!loaded) {
+          console.warn("[LOAD] Firebase timeout — sin respuesta en 8s");
+          setFbError(true);
+          setLoaded(true);
+        }
+      }, 8000);
+      return function() { unsub(); clearTimeout(fbTimeout); };
     } else {
       storageGet(key).then(function(d){
         if(d&&Array.isArray(d)){
@@ -3096,7 +3117,7 @@ function abrirCalendario(cliente) {
               , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",marginBottom:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2989}}, "Centro de Gestion de Ventas"    )
               , React.createElement('div', { style: {fontSize:22,fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2990}}, "Equipo 2400" )
               , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",marginTop:2,textTransform:"capitalize"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2991}}, info.dia)
-              , React.createElement('div', { style: {marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2992}}, React.createElement(StatusFirebase, { sincronizado: sincronizado, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2992}} ))
+              , React.createElement('div', { style: {marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2992}}, React.createElement(StatusFirebase, { sincronizado: sincronizado, error: fbError }))
             )
             , React.createElement('div', { style: {background:"#fff",borderRadius:12,padding:"4px",border:"1px solid rgba(255,255,255,.2)",flexShrink:0,maxWidth:80,overflow:"hidden"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2994}}
               , React.createElement('img', { src: CONDOR_SRC, alt: "Team 2400" , style: {height:56,width:72,display:"block",objectFit:"contain"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 2995}} )
