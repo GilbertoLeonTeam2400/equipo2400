@@ -2681,9 +2681,13 @@ function abrirCalendario(cliente) {
   const [crmAcc,   setCrmAcc]   = useState(false);
   const [crmErr,   setCrmErr]   = useState(false);
   const [crmData,  setCrmData]  = useState([]); // contactos del ejecutivo logueado
-  const [crmForm,  setCrmForm]  = useState({ nombre:"", email:"", tel:"", plan:"", planUF:"", proxAct:"", proxFecha:"", nota:"" });
+  const EMPTY_CRM_FORM = { nombre:"", email:"", tel:"", plan:"", planUF:"", proxAct:"", proxFecha:"", nota:"", canal:"", canalDetalle:"", temperatura:"tibio", oportunidad:"cotizando", fechaCierre:"", motivoNoConcretar:"" };
+  const [crmForm,  setCrmForm]  = useState(EMPTY_CRM_FORM);
   const [crmModal, setCrmModal] = useState(false);
   const [crmEdit,  setCrmEdit]  = useState(null);
+  const [crmVista, setCrmVista] = useState("activos"); // activos | cerrados | noConcretados | ufCerradas | ufPotencial
+  // Pop-up recordatorio cierre CRM
+  const [cierreRecordatorio, setCierreRecordatorio] = useState(false);
   // Reconocimientos
   const HALL_MESES = window.HALL_MESES = [
     { label:"Octubre 2025", top:[
@@ -2982,50 +2986,26 @@ function abrirCalendario(cliente) {
   function abrirEditContacto(c){setCrmForm({nombre:c.nombre,email:c.email,tel:c.tel,plan:c.plan,planUF:c.planUF||"",proxAct:c.proxAct,proxFecha:c.proxFecha,nota:c.nota||""});setCrmEdit(c.id);setCrmModal(true);}
   function guardarContacto(){
     if(!crmForm.nombre)return;
-    let data;
+    var anteriorCerrado = false;
     if(crmEdit!==null){
-      // Si se está marcando como cerrado y antes NO era cerrado, sumar UF al ejecutivo
       var contactoAnterior = crmData.find(function(c){return c.id===crmEdit;});
-      var eraYaCerrado = contactoAnterior && contactoAnterior.proxAct === "cerrado";
-      var seEstaCerrando = crmForm.proxAct === "cerrado" && !eraYaCerrado;
-      var ufACerrar = seEstaCerrando ? (parseFloat(crmForm.planUF)||0) : 0;
-      // Si estaba cerrado y ahora se reabre, restar la UF
-      var seEstaReanudando = eraYaCerrado && crmForm.proxAct !== "cerrado";
-      var ufARestar = seEstaReanudando ? (parseFloat(contactoAnterior.planUF)||0) : 0;
-      if ((ufACerrar > 0 || ufARestar > 0) && crmVid) {
-        var idEjec = Number(crmVid);
-        var nuevoEquipo = equipo.map(function(v) {
-          if (v.id !== idEjec) return v;
-          var nuevaUF = Math.max(0, parseFloat((v.uf + ufACerrar - ufARestar).toFixed(2)));
-          return Object.assign({}, v, { uf: nuevaUF });
-        });
-        setEquipo(nuevoEquipo);
-        if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
-          var key="equipo_"+info.mesKey;
-          window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",key),{equipo:nuevoEquipo,metaEquipo:metaEquipo});
-        }
-      }
-      data=crmData.map(function(c){return c.id===crmEdit?Object.assign({},c,crmForm):c;});
-    } else {
-      const newId=Date.now();
-      var nuevoContacto = Object.assign({},crmForm,{id:newId,fecha:TODAY,planUF:crmForm.planUF});
-      // Si se crea directamente como cerrado, sumar UF al ejecutivo
-      if (crmForm.proxAct === "cerrado" && parseFloat(crmForm.planUF) > 0 && crmVid) {
-        var idEjec2 = Number(crmVid);
-        var ufNueva = parseFloat(crmForm.planUF)||0;
-        var nuevoEquipo2 = equipo.map(function(v) {
-          if (v.id !== idEjec2) return v;
-          return Object.assign({}, v, { uf: parseFloat((v.uf + ufNueva).toFixed(2)) });
-        });
-        setEquipo(nuevoEquipo2);
-        if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
-          var key2="equipo_"+info.mesKey;
-          window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",key2),{equipo:nuevoEquipo2,metaEquipo:metaEquipo});
-        }
-      }
-      data=crmData.concat([nuevoContacto]);
+      anteriorCerrado = contactoAnterior && contactoAnterior.proxAct === "cerrado";
     }
-    saveCrmData(data);setCrmModal(false);
+    var seEstaCerrando = crmForm.proxAct === "cerrado" && !anteriorCerrado;
+    // Auto-set fechaCierre if closing
+    var formFinal = Object.assign({}, crmForm);
+    if (seEstaCerrando && !formFinal.fechaCierre) formFinal.fechaCierre = TODAY;
+    var data;
+    if(crmEdit!==null){
+      data = crmData.map(function(c){return c.id===crmEdit?Object.assign({},c,formFinal):c;});
+    } else {
+      var newId = Date.now();
+      data = crmData.concat([Object.assign({},formFinal,{id:newId,fechaIngreso:TODAY})]);
+    }
+    saveCrmData(data);
+    setCrmModal(false);
+    // Mostrar recordatorio si se marcó como cerrado
+    if (seEstaCerrando) setCierreRecordatorio(true);
   }
   function eliminarContacto(id){saveCrmData(crmData.filter(function(c){return c.id!==id;}));}
 
@@ -3037,10 +3017,10 @@ function abrirCalendario(cliente) {
 
   const TABS = [
     {k:"equipo",        l:"🏆 Equipo"},
-    {k:"formulario",    l:"📋 Mi Reporte Diario"},
+    {k:"formulario",    l:"📋 Mis Cierres y Actividad Diaria"},
     {k:"calculadora",   l:"🎯 Mi Meta de este Mes!"},
     {k:"historial",     l:"📈 Mi Productividad"},
-    {k:"crm",           l:"👥 Mis Clientes"},
+    {k:"crm",           l:"📒 Mi Agenda y Gestión de Clientes"},
     {k:"reconocimiento",l:"🌟 Reconocimientos"},
     {k:"supervisor",    l:"🔐 Supervisor"},
   ];
@@ -3395,7 +3375,7 @@ function abrirCalendario(cliente) {
                     )
 
                     /* Formulario nuevo cierre */
-                    , React.createElement(NuevoCierreForm, { BTN: BTN, INP: INP, RD: RD, cierresHoy: cierresHoy, setCierresHoy: setCierresHoy, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3301}} )
+                    , React.createElement(NuevoCierreForm, { BTN: BTN, INP: INP, RD: RD, cierresHoy: cierresHoy, setCierresHoy: setCierresHoy, crmData: crmData, TODAY: TODAY })
                   )
 
                   /* ── Sección 3: Notas ── */
@@ -3599,80 +3579,294 @@ function abrirCalendario(cliente) {
 
         /* ===== MIS CLIENTES (CRM) ===== */
         , tab==="crm" && (
-          React.createElement('div', { style: {maxWidth:900,margin:"0 auto"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3505}}
-            , !crmAcc?(
-
-              React.createElement('div', { style: {background:"#fff",borderRadius:20,padding:36,boxShadow:"0 4px 24px rgba(233,7,41,.1)",border:"1px solid rgba(233,7,41,.12)",maxWidth:400,margin:"0 auto",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3508}}
-                , React.createElement('div', { style: {fontSize:22,fontWeight:900,color:RD,marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3509}}, "Mis Clientes" )
-                , React.createElement('div', { style: {color:"#6B7280",fontSize:13,marginBottom:24,lineHeight:1.6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3510}}, "Ingresa con tu nombre y PIN para ver y gestionar tus contactos. Nadie mas puede ver tus clientes."                 )
-                , React.createElement('label', { style: Object.assign({},LBL,{textAlign:"left"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3511}}, "Tu nombre" )
-                , React.createElement('select', { value: crmVid, onChange: function(e){setCrmVid(e.target.value);setCrmAcc(false);}, style: Object.assign({},INP,{marginBottom:14}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3512}}
-                  , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3513}}, "Selecciona tu nombre"  )
-                  , equipo.map(function(v){return React.createElement('option', { key: v.id, value: v.id, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3514}}, v.nombre);})
-                )
-                , React.createElement('label', { style: Object.assign({},LBL,{textAlign:"left"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3516}}, "Tu PIN de 4 digitos"    )
-                , React.createElement('input', { type: "password", value: crmPin, onChange: function(e){setCrmPin(e.target.value);}, onKeyDown: function(e){if(e.key==="Enter")crmLogin();}, style: Object.assign({},INP,{textAlign:"center",fontSize:26,letterSpacing:"0.4em",marginBottom:14,padding:"14px"}), placeholder: "******", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3517}} )
-                , crmErr&&React.createElement('div', { style: {color:R,fontSize:13,marginBottom:12,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3518}}, "PIN incorrecto. Verifica con tu supervisor."     )
-                , React.createElement('button', { onClick: crmLogin, style: Object.assign({},BTN,{width:"100%",fontSize:16}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3519}}, "Ver mis clientes"  )
+          React.createElement('div', { style: {maxWidth:960,margin:"0 auto"} },
+            !crmAcc ? (
+              React.createElement('div', { style: {background:"#fff",borderRadius:20,padding:36,boxShadow:"0 4px 24px rgba(233,7,41,.1)",border:"1px solid rgba(233,7,41,.12)",maxWidth:400,margin:"0 auto",textAlign:"center"} },
+                React.createElement('div', { style: {fontSize:22,fontWeight:900,color:RD,marginBottom:4} }, "Mi Agenda y Gestión de Clientes"),
+                React.createElement('div', { style: {color:"#6B7280",fontSize:13,marginBottom:24,lineHeight:1.6} }, "Ingresa con tu nombre y PIN para ver y gestionar tus clientes."),
+                React.createElement('label', { style: Object.assign({},LBL,{textAlign:"left"}) }, "Tu nombre"),
+                React.createElement('select', { value: crmVid, onChange: function(e){setCrmVid(e.target.value);setCrmAcc(false);}, style: Object.assign({},INP,{marginBottom:14}) },
+                  React.createElement('option', { value: "" }, "Selecciona tu nombre"),
+                  equipo.map(function(v){return React.createElement('option',{key:v.id,value:v.id},v.nombre);})
+                ),
+                React.createElement('label', { style: Object.assign({},LBL,{textAlign:"left"}) }, "Tu PIN de 4 dígitos"),
+                React.createElement('input', { type:"password", value:crmPin, onChange:function(e){setCrmPin(e.target.value);}, onKeyDown:function(e){if(e.key==="Enter")crmLogin();}, style:Object.assign({},INP,{textAlign:"center",fontSize:26,letterSpacing:"0.4em",marginBottom:14,padding:"14px"}), placeholder:"••••" }),
+                crmErr && React.createElement('div', { style: {color:R,fontSize:13,marginBottom:12,fontWeight:600} }, "PIN incorrecto."),
+                React.createElement('button', { onClick:crmLogin, style:Object.assign({},BTN,{width:"100%",fontSize:16}) }, "Abrir mi agenda")
               )
-            ):(
-              React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3522}}
-                , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3523}}
-                  , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3524}}
-                    , React.createElement('div', { style: {fontSize:20,fontWeight:900,color:RD}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3525}}, "Mis Clientes - "+(crmV?crmV.nombre:""))
-                    , React.createElement('div', { style: {fontSize:13,color:"#6B7280",marginTop:2}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3526}}, "Solo tu y tu supervisor pueden ver estos datos"        )
+            ) : (
+              React.createElement('div', null,
+                /* Header */
+                React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12} },
+                  React.createElement('div', null,
+                    React.createElement('div', { style: {fontSize:20,fontWeight:900,color:RD} }, "Mi Agenda — "+(crmV?crmV.nombre:"")),
+                    React.createElement('div', { style: {fontSize:13,color:"#6B7280",marginTop:2} }, "Solo tú y tu supervisor pueden ver estos datos")
+                  ),
+                  React.createElement('div', { style: {display:"flex",gap:10} },
+                    React.createElement('button', { onClick:abrirNuevoContacto, style:Object.assign({},BTN,{padding:"10px 20px",fontSize:14}) }, "+ Nuevo cliente"),
+                    React.createElement('button', { onClick:crmLogout, style:{background:"#FEE2E2",color:R,border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700} }, "Cerrar sesión")
                   )
-                  , React.createElement('div', { style: {display:"flex",gap:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3528}}
-                    , React.createElement('button', { onClick: abrirNuevoContacto, style: Object.assign({},BTN,{padding:"10px 20px",fontSize:14}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3529}}, "+ Nuevo cliente"  )
-                    , React.createElement('button', { onClick: crmLogout, style: {background:"#FEE2E2",color:R,border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3530}}, "Cerrar sesion" )
-                  )
-                )
+                ),
 
-                /* KPIs del CRM */
-                , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3535}}
-                  , [
-                    {l:"Clientes activos",  v:pendientes,          c:"#3B82F6"},
-                    {l:"Contratos cerrados",v:cerrados,            c:"#16A34A"},
-                    {l:"No concretados",    v:perdidos,            c:"#DC2626"},
-                    {l:"UF potencial",      v:fmtUF(ufPotencial)+" UF", c:R},
-                  ].map(function(k){return React.createElement('div', { key: k.l, style: {background:"#fff",borderRadius:14,padding:"16px 14px",boxShadow:"0 2px 10px rgba(233,7,41,.07)",border:"1px solid rgba(233,7,41,.07)",borderTop:"3px solid "+k.c,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3541}}, React.createElement('div', { style: {fontSize:22,fontWeight:900,color:RD}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3541}}, k.v), React.createElement('div', { style: {fontSize:11,color:"#9CA3AF",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3541}}, k.l));})
-                )
-
-                /* Lista de contactos */
-                , crmData.length===0?(
-                  React.createElement('div', { style: {background:"#fff",borderRadius:16,padding:"48px 20px",textAlign:"center",color:"#9CA3AF",boxShadow:"0 2px 10px rgba(233,7,41,.07)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3546}}
-                    , React.createElement('div', { style: {fontSize:16,fontWeight:700,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3547}}, "Aun no tienes clientes registrados"    )
-                    , React.createElement('div', { style: {fontSize:13,marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3548}}, "Agrega tu primer cliente con el boton + Nuevo cliente"         )
-                    , React.createElement('button', { onClick: abrirNuevoContacto, style: BTN, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3549}}, "+ Agregar primer cliente"   )
-                  )
-                ):(
-                  React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3552}}
-                    , crmData.map(function(c){
-                      const act=ACTIVIDADES.find(function(a){return a.k===c.proxAct;})||{l:"Sin actividad",col:"#9CA3AF"};
-                      const esCerrado=c.proxAct==="cerrado";
-                      const esPerdido=c.proxAct==="perdido";
-                      return (
-                        React.createElement('div', { key: c.id, style: {background:"#fff",borderRadius:16,padding:"18px 18px 14px",boxShadow:"0 2px 12px rgba(233,7,41,.07)",border:"1px solid "+(esCerrado?"#86EFAC":esPerdido?"#FCA5A5":"rgba(233,7,41,.08)"),opacity:esPerdido?0.7:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3558}}
-                          , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3559}}
-                            , React.createElement('div', { style: {fontWeight:800,fontSize:15,color:RD,lineHeight:1.3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3560}}, c.nombre)
-                            , React.createElement('span', { style: {background:act.col,color:"#fff",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",marginLeft:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3561}}, act.l)
-                          )
-                          , React.createElement('div', { style: {fontSize:12,color:"#6B7280",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3563}}, c.tel&&("Tel: "+c.tel))
-                          , React.createElement('div', { style: {fontSize:12,color:"#6B7280",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3564}}, c.email&&("Email: "+c.email))
-                          , c.plan&&React.createElement('div', { style: {background:BG,borderRadius:8,padding:"6px 10px",fontSize:12,color:R,marginBottom:8,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3565}}, c.plan+(c.planUF&&parseFloat(c.planUF)>0?" - "+fmtUF(parseFloat(c.planUF))+" UF":""))
-                          , c.proxFecha&&React.createElement('div', { style: {fontSize:12,color:"#D97706",fontWeight:600,marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3566}}, "Prox: "+c.proxFecha)
-                          , c.nota&&React.createElement('div', { style: {fontSize:12,color:"#555",fontStyle:"italic",borderTop:"1px solid #F0F0F0",paddingTop:8,marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3567}}, c.nota)
-                          , React.createElement('div', { style: {display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3568}}
-                            , React.createElement('button', { onClick: function(){abrirEditContacto(c);}, style: {flex:1,padding:"7px",background:BG,color:R,border:"1px solid rgba(233,7,41,.3)",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3569}}, "Editar")
-                            , c.proxFecha && c.proxAct && (
-                              React.createElement('button', { onClick: function(){abrirCalendario(c);}, style: {flex:1,padding:"7px",background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #93C5FD",borderRadius:8,fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3571}}, "+ Calendario" )
-                            )
-                            , React.createElement('button', { onClick: function(){if(window.confirm("Eliminar este cliente?"))eliminarContacto(c.id);}, style: {padding:"7px 12px",background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3573}}, "X")
-                          )
-                        )
+                /* KPIs */
+                (function(){
+                  var activos = crmData.filter(function(c){return c.proxAct!=="cerrado"&&c.proxAct!=="perdido";});
+                  var cerrados = crmData.filter(function(c){return c.proxAct==="cerrado";});
+                  var perdidos = crmData.filter(function(c){return c.proxAct==="perdido";});
+                  var ufCerradas = cerrados.reduce(function(s,c){return s+(parseFloat(c.planUF)||0);},0);
+                  var ufPotencial = crmData.filter(function(c){return c.oportunidad==="potencial"&&c.proxAct!=="cerrado"&&c.proxAct!=="perdido";}).reduce(function(s,c){return s+(parseFloat(c.planUF)||0);},0);
+                  var hoyMs = new Date().getTime();
+                  // Alerta seguimiento: activos sin proxFecha o proxFecha vencida >7d
+                  var sinSeguimiento = activos.filter(function(c){
+                    if(!c.proxFecha) return true;
+                    var parts=c.proxFecha.split("-"); var d=new Date(parts[0],parts[1]-1,parts[2]);
+                    return (hoyMs-d.getTime())>7*24*3600*1000;
+                  }).length;
+                  return React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20} },
+                    [
+                      {l:"Clientes Activos",v:activos.length,c:"#3B82F6"},
+                      {l:"Contratos Cerrados",v:cerrados.length,c:"#16A34A"},
+                      {l:"No Concretados",v:perdidos.length,c:"#DC2626"},
+                      {l:"UF's Cerradas",v:fmtUF(ufCerradas)+" UF",c:"#16A34A"},
+                      {l:"UF Potencial Cierre",v:fmtUF(ufPotencial)+" UF",c:R},
+                      {l:"⚠️ Sin seguimiento",v:sinSeguimiento,c:"#D97706"},
+                    ].map(function(k){
+                      return React.createElement('div',{key:k.l,style:{background:"#fff",borderRadius:12,padding:"12px 10px",boxShadow:"0 2px 10px rgba(233,7,41,.07)",border:"1px solid rgba(233,7,41,.07)",borderTop:"3px solid "+k.c,textAlign:"center"}},
+                        React.createElement('div',{style:{fontSize:18,fontWeight:900,color:RD}},k.v),
+                        React.createElement('div',{style:{fontSize:10,color:"#9CA3AF",marginTop:3,lineHeight:1.3}},k.l)
                       );
                     })
-                  )
+                  );
+                })(),
+
+                /* Sub-tabs */
+                React.createElement('div', { style: {display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"} },
+                  [["activos","👥 Clientes Activos"],["cerrados","✅ Clientes Cerrados"],["noConcretados","❌ No Concretados"],["ufCerradas","💰 UF's Cerradas"],["ufPotencial","🎯 UF Potencial Cierre"]].map(function(st){
+                    return React.createElement('button',{key:st[0],onClick:function(){setCrmVista(st[0]);},
+                      style:{padding:"8px 14px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,
+                        background:crmVista===st[0]?R:"#E5E7EB",color:crmVista===st[0]?"#fff":"#374151"}},st[1]);
+                  })
+                ),
+
+                /* Content por sub-vista */
+                (function(){
+                  var hoyMs = new Date().getTime();
+                  function diasDesde(fechaStr){
+                    if(!fechaStr)return null;
+                    var p=fechaStr.split("-"); var d=new Date(p[0],p[1]-1,p[2]);
+                    return Math.floor((hoyMs-d.getTime())/(24*3600*1000));
+                  }
+                  function tempIcon(t){ return t==="caliente"?"🔥":t==="frio"?"🧊":"🌡️"; }
+                  function canalLabel(c){ return {referido:"👥 Referido",redes:"📱 Redes Sociales",leads:"📋 Leads",llamada:"📞 Llamada en Frío",terreno:"🚶 Terreno"}[c]||c||"—"; }
+
+                  function tarjetaCliente(c, extra){
+                    var diasSeg = c.proxFecha ? diasDesde(c.proxFecha) : null;
+                    var alerta = diasSeg !== null && diasSeg > 7;
+                    return React.createElement('div',{key:c.id,style:{background:"#fff",borderRadius:16,padding:"16px",boxShadow:"0 2px 12px rgba(233,7,41,.07)",border:"1px solid "+(alerta?"#FCD34D":"rgba(233,7,41,.08)"),position:"relative"}},
+                      alerta && React.createElement('div',{style:{position:"absolute",top:10,right:10,background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:800,borderRadius:99,padding:"3px 8px"}}, "⚠️ Requiere seguimiento"),
+                      React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
+                        React.createElement('div',{style:{fontWeight:800,fontSize:14,color:RD,lineHeight:1.3,paddingRight:80}},c.nombre),
+                        c.temperatura && React.createElement('span',{style:{fontSize:18}},tempIcon(c.temperatura))
+                      ),
+                      c.canal && React.createElement('div',{style:{fontSize:11,color:"#6B7280",marginBottom:4}},
+                        canalLabel(c.canal), c.canalDetalle?" — "+c.canalDetalle:""
+                      ),
+                      React.createElement('div',{style:{fontSize:11,color:"#9CA3AF",marginBottom:4}},
+                        "Ingresó: ", c.fechaIngreso||c.fecha||"—",
+                        c.proxFecha?" · Próx: "+c.proxFecha:""
+                      ),
+                      c.plan && React.createElement('div',{style:{fontSize:12,color:R,fontWeight:700,marginBottom:4}},
+                        c.plan+(c.planUF&&parseFloat(c.planUF)>0?" · "+fmtUF(parseFloat(c.planUF))+" UF":"")
+                      ),
+                      c.oportunidad==="potencial" && React.createElement('div',{style:{display:"inline-block",background:"#FFF7ED",color:"#C2410C",border:"1px solid #FED7AA",borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,marginBottom:6}},"🎯 Potencial Cierre"),
+                      c.nota && React.createElement('div',{style:{fontSize:11,color:"#555",fontStyle:"italic",borderTop:"1px solid #F0F4FA",paddingTop:6,marginTop:4}},c.nota),
+                      extra,
+                      React.createElement('div',{style:{display:"flex",gap:8,marginTop:10}},
+                        React.createElement('button',{onClick:function(){abrirEditContacto(c);},style:{flex:1,padding:"7px",background:BG,color:R,border:"1px solid rgba(233,7,41,.3)",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}},"Editar"),
+                        React.createElement('button',{onClick:function(){if(window.confirm("¿Eliminar este cliente?"))eliminarContacto(c.id);},style:{padding:"7px 12px",background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}},"✕")
+                      )
+                    );
+                  }
+
+                  // ── Clientes Activos ──
+                  if(crmVista==="activos"){
+                    var lista = crmData.filter(function(c){return c.proxAct!=="cerrado"&&c.proxAct!=="perdido";});
+                    if(lista.length===0) return React.createElement('div',{style:{textAlign:"center",padding:"48px",color:"#9CA3AF",background:"#fff",borderRadius:16}},
+                      React.createElement('div',{style:{fontSize:16,fontWeight:700,marginBottom:8}},"No tienes clientes activos"),
+                      React.createElement('button',{onClick:abrirNuevoContacto,style:BTN},"+ Agregar primer cliente")
+                    );
+                    return React.createElement('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}},
+                      lista.map(function(c){ return tarjetaCliente(c, null); })
+                    );
+                  }
+
+                  // ── Clientes Cerrados ──
+                  if(crmVista==="cerrados"){
+                    var lista2 = crmData.filter(function(c){return c.proxAct==="cerrado";});
+                    if(lista2.length===0) return React.createElement('div',{style:{textAlign:"center",padding:"48px",color:"#9CA3AF",background:"#fff",borderRadius:16}},"Aún no tienes contratos cerrados.");
+                    return React.createElement('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}},
+                      lista2.map(function(c){
+                        var diasCierre = (c.fechaIngreso||c.fecha)&&c.fechaCierre ? diasDesde(c.fechaIngreso||c.fecha) - diasDesde(c.fechaCierre) : null;
+                        var diasTardado = (c.fechaIngreso||c.fecha)&&c.fechaCierre ? Math.abs(diasDesde(c.fechaIngreso||c.fecha)-diasDesde(c.fechaCierre)) : null;
+                        var extra = React.createElement('div',{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}},
+                          c.fechaCierre&&React.createElement('span',{style:{background:"#DCFCE7",color:"#15803D",borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700}},"Cerrado: "+c.fechaCierre),
+                          diasTardado!==null&&React.createElement('span',{style:{background:"#EFF6FF",color:"#1D4ED8",borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700}},diasTardado+" días en cerrar")
+                        );
+                        return tarjetaCliente(c, extra);
+                      })
+                    );
+                  }
+
+                  // ── No Concretados ──
+                  if(crmVista==="noConcretados"){
+                    var lista3 = crmData.filter(function(c){return c.proxAct==="perdido";});
+                    if(lista3.length===0) return React.createElement('div',{style:{textAlign:"center",padding:"48px",color:"#9CA3AF",background:"#fff",borderRadius:16}},"No tienes clientes no concretados.");
+                    var motivoCount = {};
+                    lista3.forEach(function(c){ var m=c.motivoNoConcretar||"Sin especificar"; motivoCount[m]=(motivoCount[m]||0)+1; });
+                    return React.createElement('div',null,
+                      React.createElement('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14,marginBottom:20}},
+                        lista3.map(function(c){ return tarjetaCliente(c,
+                          c.motivoNoConcretar&&React.createElement('div',{style:{background:"#FEF2F2",color:"#DC2626",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,marginTop:4,display:"inline-block"}},"Motivo: "+c.motivoNoConcretar)
+                        ); })
+                      ),
+                      React.createElement('div',{style:{background:"#fff",borderRadius:14,padding:"18px 20px",boxShadow:"0 2px 10px rgba(0,0,0,.06)"}},
+                        React.createElement('div',{style:{fontWeight:800,color:RD,marginBottom:10,fontSize:14}},"📊 Motivos de no concreción"),
+                        Object.keys(motivoCount).map(function(m){
+                          return React.createElement('div',{key:m,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #F3F4F6",fontSize:13}},
+                            React.createElement('span',null,m),
+                            React.createElement('span',{style:{fontWeight:700,color:RD}},motivoCount[m])
+                          );
+                        })
+                      )
+                    );
+                  }
+
+                  // ── UF's Cerradas ──
+                  if(crmVista==="ufCerradas"){
+                    var cerr = crmData.filter(function(c){return c.proxAct==="cerrado"&&parseFloat(c.planUF)>0;});
+                    var totalUFCerr = cerr.reduce(function(s,c){return s+(parseFloat(c.planUF)||0);},0);
+                    // Agrupar por mes de cierre
+                    var porMes = {};
+                    cerr.forEach(function(c){
+                      var mk = c.fechaCierre ? c.fechaCierre.substring(0,7) : "Sin fecha";
+                      if(!porMes[mk]) porMes[mk]={uf:0,count:0};
+                      porMes[mk].uf += parseFloat(c.planUF)||0;
+                      porMes[mk].count++;
+                    });
+                    return React.createElement('div',null,
+                      React.createElement('div',{style:{background:"linear-gradient(135deg,#16A34A,#15803D)",borderRadius:18,padding:"24px 28px",marginBottom:18,color:"#fff",textAlign:"center"}},
+                        React.createElement('div',{style:{fontSize:11,opacity:.7,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}},"Total UF's Cerradas en tu Agenda"),
+                        React.createElement('div',{style:{fontSize:48,fontWeight:900,lineHeight:1}}),
+                        React.createElement('div',{style:{fontSize:42,fontWeight:900}},fmtUF(totalUFCerr)+" UF"),
+                        React.createElement('div',{style:{fontSize:13,opacity:.8,marginTop:6}},cerr.length+" contrato(s) cerrado(s)")
+                      ),
+                      Object.keys(porMes).sort().reverse().map(function(mk){
+                        return React.createElement('div',{key:mk,style:{background:"#fff",borderRadius:12,padding:"14px 18px",marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,.05)"}},
+                          React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                            React.createElement('div',{style:{fontWeight:700,color:"#374151"}},mk),
+                            React.createElement('div',{style:{fontWeight:900,color:"#16A34A",fontSize:18}},fmtUF(porMes[mk].uf)+" UF"),
+                            React.createElement('div',{style:{fontSize:12,color:"#9CA3AF"}},porMes[mk].count+" cierre(s)")
+                          )
+                        );
+                      }),
+                      cerr.length===0&&React.createElement('div',{style:{textAlign:"center",padding:"32px",color:"#9CA3AF"}},"Aún no tienes UF's cerradas en tu agenda.")
+                    );
+                  }
+
+                  // ── UF Potencial Cierre ──
+                  if(crmVista==="ufPotencial"){
+                    var pot = crmData.filter(function(c){return c.oportunidad==="potencial"&&c.proxAct!=="cerrado"&&c.proxAct!=="perdido";});
+                    var totalPot = pot.reduce(function(s,c){return s+(parseFloat(c.planUF)||0);},0);
+                    return React.createElement('div',null,
+                      React.createElement('div',{style:{background:"linear-gradient(135deg,"+R+",#8B0418)",borderRadius:18,padding:"24px 28px",marginBottom:18,color:"#fff",textAlign:"center"}},
+                        React.createElement('div',{style:{fontSize:11,opacity:.7,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}},"UF de Potencial Cierre"),
+                        React.createElement('div',{style:{fontSize:42,fontWeight:900}},fmtUF(totalPot)+" UF"),
+                        React.createElement('div',{style:{fontSize:13,opacity:.8,marginTop:6}},pot.length+" cliente(s) marcado(s) como Potencial Cierre")
+                      ),
+                      pot.length===0
+                        ? React.createElement('div',{style:{textAlign:"center",padding:"32px",color:"#9CA3AF"}},'Marca clientes como "Potencial Cierre" al editarlos para verlos aquí.')
+                        : React.createElement('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}},
+                            pot.map(function(c){ return tarjetaCliente(c,null); })
+                          )
+                    );
+                  }
+
+                  return null;
+                })(),
+
+                /* ── Métricas al pie ── */
+                React.createElement('div',{style:{marginTop:24,background:"#fff",borderRadius:16,padding:"20px 22px",boxShadow:"0 2px 10px rgba(0,0,0,.05)"}},
+                  React.createElement('div',{style:{fontWeight:900,color:RD,fontSize:15,marginBottom:14}},"📊 Métricas de Prospección"),
+                  (function(){
+                    var cerrados2 = crmData.filter(function(c){return c.proxAct==="cerrado";});
+                    var total = crmData.length;
+                    var tasaGlobal = total>0 ? Math.round((cerrados2.length/total)*100) : 0;
+                    // Tasa por canal
+                    var canales = ["referido","redes","leads","llamada","terreno"];
+                    var canalNames = {referido:"👥 Referido",redes:"📱 Redes Sociales",leads:"📋 Leads",llamada:"📞 Llamada en Frío",terreno:"🚶 Terreno"};
+                    var canalStats = canales.map(function(ca){
+                      var total_c = crmData.filter(function(c){return c.canal===ca;}).length;
+                      var cerr_c = crmData.filter(function(c){return c.canal===ca&&c.proxAct==="cerrado";}).length;
+                      return {canal:ca,total:total_c,cerrados:cerr_c,tasa:total_c>0?Math.round((cerr_c/total_c)*100):0};
+                    }).filter(function(s){return s.total>0;});
+                    // Tasa por mes
+                    var porMesTasa = {};
+                    crmData.forEach(function(c){
+                      var mk = (c.fechaIngreso||c.fecha||"").substring(0,7);
+                      if(!mk)return;
+                      if(!porMesTasa[mk]){porMesTasa[mk]={total:0,cerrados:0};}
+                      porMesTasa[mk].total++;
+                      if(c.proxAct==="cerrado")porMesTasa[mk].cerrados++;
+                    });
+                    // Tiempo promedio de cierre
+                    var diasList = cerrados2.filter(function(c){return (c.fechaIngreso||c.fecha)&&c.fechaCierre;}).map(function(c){
+                      var fi=new Date((c.fechaIngreso||c.fecha).replace(/-/g,"/"));
+                      var fc=new Date(c.fechaCierre.replace(/-/g,"/"));
+                      return Math.max(0,Math.round((fc-fi)/(24*3600*1000)));
+                    });
+                    var promDias = diasList.length>0 ? Math.round(diasList.reduce(function(s,d){return s+d;},0)/diasList.length) : null;
+
+                    return React.createElement('div',null,
+                      React.createElement('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10,marginBottom:16}},
+                        React.createElement('div',{style:{background:"#F8FAFC",borderRadius:10,padding:"12px 14px",textAlign:"center"}},
+                          React.createElement('div',{style:{fontSize:26,fontWeight:900,color:RD}},tasaGlobal+"%"),
+                          React.createElement('div',{style:{fontSize:11,color:"#9CA3AF",marginTop:2}},"Tasa de cierre global")
+                        ),
+                        React.createElement('div',{style:{background:"#F8FAFC",borderRadius:10,padding:"12px 14px",textAlign:"center"}},
+                          React.createElement('div',{style:{fontSize:26,fontWeight:900,color:"#16A34A"}},promDias!==null?promDias+" días":"—"),
+                          React.createElement('div',{style:{fontSize:11,color:"#9CA3AF",marginTop:2}},"Tiempo prom. de cierre")
+                        )
+                      ),
+                      canalStats.length>0&&React.createElement('div',{style:{marginBottom:14}},
+                        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}},"Tasa de cierre por canal:"),
+                        canalStats.map(function(s){
+                          return React.createElement('div',{key:s.canal,style:{display:"flex",alignItems:"center",gap:10,marginBottom:6}},
+                            React.createElement('div',{style:{width:130,fontSize:12,color:"#374151"}},canalNames[s.canal]),
+                            React.createElement('div',{style:{flex:1,background:"#E5E7EB",borderRadius:99,height:8,overflow:"hidden"}},
+                              React.createElement('div',{style:{width:s.tasa+"%",background:R,height:"100%",borderRadius:99}})
+                            ),
+                            React.createElement('div',{style:{fontSize:12,fontWeight:700,color:RD,width:40,textAlign:"right"}},s.tasa+"%"),
+                            React.createElement('div',{style:{fontSize:11,color:"#9CA3AF"}},"("+s.cerrados+"/"+s.total+")")
+                          );
+                        })
+                      ),
+                      Object.keys(porMesTasa).length>0&&React.createElement('div',null,
+                        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}},"Tasa de cierre por mes:"),
+                        Object.keys(porMesTasa).sort().reverse().slice(0,6).map(function(mk){
+                          var s=porMesTasa[mk];
+                          var tasa=Math.round((s.cerrados/s.total)*100);
+                          return React.createElement('div',{key:mk,style:{display:"flex",alignItems:"center",gap:10,marginBottom:6}},
+                            React.createElement('div',{style:{width:80,fontSize:12,color:"#374151"}},mk),
+                            React.createElement('div',{style:{flex:1,background:"#E5E7EB",borderRadius:99,height:8,overflow:"hidden"}},
+                              React.createElement('div',{style:{width:tasa+"%",background:"#3B82F6",height:"100%",borderRadius:99}})
+                            ),
+                            React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"#1D4ED8",width:40,textAlign:"right"}},tasa+"%"),
+                            React.createElement('div',{style:{fontSize:11,color:"#9CA3AF"}},"("+s.cerrados+"/"+s.total+")")
+                          );
+                        })
+                      )
+                    );
+                  })()
                 )
               )
             )
@@ -3947,30 +4141,118 @@ function abrirCalendario(cliente) {
         )
       )
 
+      /* POP-UP RECORDATORIO CIERRE CRM */
+      , cierreRecordatorio&&(
+        React.createElement('div', { style: {position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:"20px"} },
+          React.createElement('div', { style: {background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:400,boxShadow:"0 24px 64px rgba(0,0,0,.3)",textAlign:"center"} },
+            React.createElement('div', { style: {fontSize:40,marginBottom:12} }, "🏆"),
+            React.createElement('div', { style: {fontSize:20,fontWeight:900,color:"#16A34A",marginBottom:8} }, "¡Contrato cerrado!"),
+            React.createElement('div', { style: {fontSize:14,color:"#374151",lineHeight:1.6,marginBottom:20} },
+              "Recuerda indicar este logro en ",
+              React.createElement('strong', null, '"Mis Cierres y Actividad Diaria"'),
+              " para que esta victoria sume a tu tablero y al del equipo."
+            ),
+            React.createElement('div', { style: {background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:12,padding:"12px 16px",marginBottom:20,fontSize:13,color:"#92400E",fontWeight:600} },
+              "📋 Ve a la pestaña → Mis Cierres y Actividad Diaria → Agrega el cierre con la UF correspondiente"
+            ),
+            React.createElement('button', {
+              onClick: function(){setCierreRecordatorio(false);},
+              style: {width:"100%",padding:"14px",border:"none",borderRadius:12,background:"#16A34A",color:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15}
+            }, "✅ Entendido, voy a registrarlo")
+          )
+        )
+      )
+
       /* MODAL CRM */
       , crmModal&&(
-        React.createElement('div', { style: {position:"fixed",inset:0,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:"20px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3846}}
-          , React.createElement('div', { style: {background:"#fff",borderRadius:20,padding:30,width:"100%",maxWidth:500,boxShadow:"0 24px 64px rgba(0,0,0,.25)",maxHeight:"90vh",overflowY:"auto"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3847}}
-            , React.createElement('div', { style: {fontSize:20,fontWeight:900,color:RD,marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3848}}, crmEdit!==null?"Editar cliente":"Nuevo cliente")
-            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3849}}
-              , React.createElement('div', { style: {gridColumn:"1/-1"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3850}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3850}}, "Nombre completo del cliente *"    ), React.createElement('input', { value: crmForm.nombre, onChange: function(e){setCrmForm(Object.assign({},crmForm,{nombre:e.target.value}));}, style: INP, placeholder: "Nombre apellido" , __self: this, __source: {fileName: _jsxFileName, lineNumber: 3850}} ))
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3851}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3851}}, "Telefono"), React.createElement('input', { type: "tel", value: crmForm.tel, onChange: function(e){setCrmForm(Object.assign({},crmForm,{tel:e.target.value}));}, style: INP, placeholder: "+56 9 XXXX XXXX"   , __self: this, __source: {fileName: _jsxFileName, lineNumber: 3851}} ))
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3852}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3852}}, "Correo electronico" ), React.createElement('input', { type: "email", value: crmForm.email, onChange: function(e){setCrmForm(Object.assign({},crmForm,{email:e.target.value}));}, style: INP, placeholder: "correo@mail.com", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3852}} ))
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3853}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3853}}, "Nombre del plan"  ), React.createElement('input', { value: crmForm.plan, onChange: function(e){setCrmForm(Object.assign({},crmForm,{plan:e.target.value}));}, style: INP, placeholder: "Ej: Plan Familiar 3 personas"    , __self: this, __source: {fileName: _jsxFileName, lineNumber: 3853}} ))
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3854}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3854}}, "UF del plan"  ), React.createElement('input', { type: "number", step: "0.1", min: "0", value: crmForm.planUF, onChange: function(e){setCrmForm(Object.assign({},crmForm,{planUF:e.target.value}));}, style: INP, placeholder: "Ej: 7.5" , __self: this, __source: {fileName: _jsxFileName, lineNumber: 3854}} ))
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3855}}
-                , React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3856}}, "Proxima actividad" )
-                , React.createElement('select', { value: crmForm.proxAct, onChange: function(e){setCrmForm(Object.assign({},crmForm,{proxAct:e.target.value}));}, style: INP, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3857}}
-                  , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3858}}, "Selecciona actividad..." )
-                  , ACTIVIDADES.map(function(a){return React.createElement('option', { key: a.k, value: a.k, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3859}}, a.l);})
+        React.createElement('div', { style: {position:"fixed",inset:0,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:"20px"} },
+          React.createElement('div', { style: {background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:540,boxShadow:"0 24px 64px rgba(0,0,0,.25)",maxHeight:"92vh",overflowY:"auto"} },
+            React.createElement('div', { style: {fontSize:18,fontWeight:900,color:RD,marginBottom:18} }, crmEdit!==null?"✏️ Editar cliente":"➕ Nuevo cliente"),
+            React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12} },
+              /* Nombre */
+              React.createElement('div', { style: {gridColumn:"1/-1"} },
+                React.createElement('label', { style: LBL }, "Nombre completo *"),
+                React.createElement('input', { value:crmForm.nombre, onChange:function(e){setCrmForm(Object.assign({},crmForm,{nombre:e.target.value}));}, style:INP, placeholder:"Nombre Apellido" })
+              ),
+              /* Tel + Email */
+              React.createElement('div', null, React.createElement('label',{style:LBL},"Teléfono"), React.createElement('input',{type:"tel",value:crmForm.tel,onChange:function(e){setCrmForm(Object.assign({},crmForm,{tel:e.target.value}));},style:INP,placeholder:"+56 9 XXXX XXXX"})),
+              React.createElement('div', null, React.createElement('label',{style:LBL},"Correo"), React.createElement('input',{type:"email",value:crmForm.email,onChange:function(e){setCrmForm(Object.assign({},crmForm,{email:e.target.value}));},style:INP,placeholder:"correo@mail.com"})),
+              /* Plan + UF */
+              React.createElement('div', null, React.createElement('label',{style:LBL},"Plan"), React.createElement('input',{value:crmForm.plan,onChange:function(e){setCrmForm(Object.assign({},crmForm,{plan:e.target.value}));},style:INP,placeholder:"Ej: Plan Familiar"})),
+              React.createElement('div', null, React.createElement('label',{style:LBL},"UF del plan"), React.createElement('input',{type:"number",step:"0.01",min:"0",value:crmForm.planUF,onChange:function(e){setCrmForm(Object.assign({},crmForm,{planUF:e.target.value}));},style:INP,placeholder:"0.00"})),
+              /* Canal de origen */
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Canal de origen"),
+                React.createElement('select',{value:crmForm.canal,onChange:function(e){setCrmForm(Object.assign({},crmForm,{canal:e.target.value,canalDetalle:""}));},style:INP},
+                  React.createElement('option',{value:""},"Selecciona canal..."),
+                  React.createElement('option',{value:"referido"},"👥 Referido"),
+                  React.createElement('option',{value:"redes"},"📱 Redes Sociales"),
+                  React.createElement('option',{value:"leads"},"📋 Leads"),
+                  React.createElement('option',{value:"llamada"},"📞 Llamada en Frío"),
+                  React.createElement('option',{value:"terreno"},"🚶 Terreno")
                 )
+              ),
+              /* Detalle canal */
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Detalle del canal"),
+                React.createElement('input',{value:crmForm.canalDetalle,onChange:function(e){setCrmForm(Object.assign({},crmForm,{canalDetalle:e.target.value}));},style:INP,
+                  placeholder:crmForm.canal==="terreno"?"Ej: Clínica Dávila":crmForm.canal==="referido"?"Ej: Juan Pérez":crmForm.canal==="redes"?"Ej: Instagram":"Detalle adicional"})
+              ),
+              /* Temperatura */
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"🌡️ Temperatura"),
+                React.createElement('select',{value:crmForm.temperatura,onChange:function(e){setCrmForm(Object.assign({},crmForm,{temperatura:e.target.value}));},style:INP},
+                  React.createElement('option',{value:"caliente"},"🔥 Caliente — listo para cerrar"),
+                  React.createElement('option',{value:"tibio"},"🌡️ Tibio — interesado, necesita seguimiento"),
+                  React.createElement('option',{value:"frio"},"🧊 Frío — poco interés por ahora")
+                )
+              ),
+              /* Oportunidad */
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Estado de oportunidad"),
+                React.createElement('select',{value:crmForm.oportunidad,onChange:function(e){setCrmForm(Object.assign({},crmForm,{oportunidad:e.target.value}));},style:INP},
+                  React.createElement('option',{value:"cotizando"},"📋 Solo Cotizando"),
+                  React.createElement('option',{value:"potencial"},"🎯 Potencial Cierre")
+                )
+              ),
+              /* Próxima actividad + fecha */
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Próxima actividad"),
+                React.createElement('select',{value:crmForm.proxAct,onChange:function(e){setCrmForm(Object.assign({},crmForm,{proxAct:e.target.value}));},style:INP},
+                  React.createElement('option',{value:""},"Selecciona..."),
+                  ACTIVIDADES.map(function(a){return React.createElement('option',{key:a.k,value:a.k},a.l);})
+                )
+              ),
+              React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Fecha próx. actividad"),
+                React.createElement('input',{type:"date",value:crmForm.proxFecha,onChange:function(e){setCrmForm(Object.assign({},crmForm,{proxFecha:e.target.value}));},style:INP})
+              ),
+              /* Fecha cierre (solo si cerrado) */
+              crmForm.proxAct==="cerrado" && React.createElement('div', null,
+                React.createElement('label',{style:LBL},"Fecha de cierre"),
+                React.createElement('input',{type:"date",value:crmForm.fechaCierre,onChange:function(e){setCrmForm(Object.assign({},crmForm,{fechaCierre:e.target.value}));},style:INP})
+              ),
+              /* Motivo no concretar (solo si perdido) */
+              crmForm.proxAct==="perdido" && React.createElement('div', { style: {gridColumn:"1/-1"} },
+                React.createElement('label',{style:LBL},"Motivo de no concreción"),
+                React.createElement('select',{value:crmForm.motivoNoConcretar,onChange:function(e){setCrmForm(Object.assign({},crmForm,{motivoNoConcretar:e.target.value}));},style:INP},
+                  React.createElement('option',{value:""},"Selecciona motivo..."),
+                  React.createElement('option',{value:"Precio"},"💰 Precio"),
+                  React.createElement('option',{value:"Competencia"},"🏁 Competencia"),
+                  React.createElement('option',{value:"Sin interés"},"😐 Sin interés"),
+                  React.createElement('option',{value:"No califica"},"❌ No califica"),
+                  React.createElement('option',{value:"Otro"},"📝 Otro")
+                )
+              ),
+              /* Notas */
+              React.createElement('div', { style: {gridColumn:"1/-1"} },
+                React.createElement('label',{style:LBL},"Notas"),
+                React.createElement('textarea',{value:crmForm.nota,onChange:function(e){setCrmForm(Object.assign({},crmForm,{nota:e.target.value}));},style:Object.assign({},INP,{height:70,resize:"vertical"}),placeholder:"Observaciones, preferencias, contexto del cliente..."})
               )
-              , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3862}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3862}}, "Fecha proxima actividad"  ), React.createElement('input', { type: "date", value: crmForm.proxFecha, onChange: function(e){setCrmForm(Object.assign({},crmForm,{proxFecha:e.target.value}));}, style: INP, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3862}} ))
-              , React.createElement('div', { style: {gridColumn:"1/-1"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3863}}, React.createElement('label', { style: LBL, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3863}}, "Notas"), React.createElement('textarea', { value: crmForm.nota, onChange: function(e){setCrmForm(Object.assign({},crmForm,{nota:e.target.value}));}, style: Object.assign({},INP,{height:80,resize:"vertical"}), placeholder: "Observaciones, preferencias, contexto del cliente..."    , __self: this, __source: {fileName: _jsxFileName, lineNumber: 3863}} ))
-            )
-            , React.createElement('div', { style: {display:"flex",gap:10,marginTop:22}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3865}}
-              , React.createElement('button', { onClick: function(){setCrmModal(false);}, style: {flex:1,padding:"12px",border:"1.5px solid #E5E7EB",borderRadius:12,background:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:14,color:"#6B7280"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3866}}, "Cancelar")
-              , React.createElement('button', { onClick: guardarContacto, style: Object.assign({},BTN,{flex:2,padding:"12px"}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3867}}, "Guardar cliente" )
+            ),
+            React.createElement('div', { style: {display:"flex",gap:10,marginTop:18} },
+              React.createElement('button',{onClick:function(){setCrmModal(false);},style:{flex:1,padding:"12px",border:"1.5px solid #E5E7EB",borderRadius:12,background:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:14,color:"#6B7280"}},"Cancelar"),
+              React.createElement('button',{onClick:guardarContacto,style:Object.assign({},BTN,{flex:2,padding:"12px"})},"💾 Guardar cliente")
             )
           )
         )
@@ -4573,18 +4855,64 @@ function EditarMetaEquipo({ metaEquipo, setMetaEquipo, premioConecta, setPremioC
 
 
 // ── Formulario de nuevo cierre (componente propio para poder usar useState) ──
-function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy }) {
-  const [nc, setNc] = React.useState({uf:"", sexo:"hombre", conecta:false, origen:"fonasa"});
+function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy, crmData, TODAY }) {
+  const [nc, setNc] = React.useState({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", clienteNombre:""});
+  const [dupWarning, setDupWarning] = React.useState(null); // cliente CRM similar detectado
+  const [dupConfirmed, setDupConfirmed] = React.useState(false);
+
+  function buscarDuplicado(nombre) {
+    if (!nombre || !crmData || crmData.length === 0) { setDupWarning(null); return; }
+    var nombreUpper = nombre.trim().toUpperCase();
+    var palabras = nombreUpper.split(/\s+/).filter(function(p){ return p.length > 2; });
+    var match = crmData.find(function(c) {
+      if (c.proxAct !== "cerrado") return false;
+      var cNombre = (c.nombre||"").toUpperCase();
+      return palabras.some(function(p){ return cNombre.indexOf(p) >= 0; });
+    });
+    setDupWarning(match || null);
+    setDupConfirmed(false);
+  }
+
   function agregar() {
     const uf = parseFloat(nc.uf);
     if (!uf || uf <= 0) return;
-    setCierresHoy(cierresHoy.concat([{uf:uf, sexo:nc.sexo, conecta:nc.conecta, origen:nc.origen}]));
-    setNc({uf:"", sexo:"hombre", conecta:false, origen:"fonasa"});
+    if (dupWarning && !dupConfirmed) return; // bloquear si hay duplicado sin confirmar
+    setCierresHoy(cierresHoy.concat([{uf:uf, sexo:nc.sexo, conecta:nc.conecta, origen:nc.origen, clienteNombre:nc.clienteNombre}]));
+    setNc({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", clienteNombre:""});
+    setDupWarning(null); setDupConfirmed(false);
   }
   return (
     React.createElement('div', { style: {background:"#fff",borderRadius:10,padding:"14px",border:"1.5px dashed rgba(233,7,41,.3)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4473}}
-      , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4474}}, "➕ Agregar cierre"  )
-      , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4475}}
+      , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:RD,marginBottom:10}}, "➕ Agregar cierre")
+      , React.createElement('div', { style: {marginBottom:10} },
+        React.createElement('label', { style: {fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4} }, "Nombre del cliente (opcional, para detectar duplicados)"),
+        React.createElement('input', {
+          type:"text", value: nc.clienteNombre, placeholder:"Ej: Juan Pérez",
+          onChange: function(e){ setNc(Object.assign({},nc,{clienteNombre:e.target.value})); buscarDuplicado(e.target.value); },
+          style: Object.assign({},INP,{fontSize:13})
+        })
+      )
+      , dupWarning && !dupConfirmed && React.createElement('div', { style: {background:"#FFFBEB",border:"2px solid #F59E0B",borderRadius:12,padding:"12px 14px",marginBottom:10} },
+        React.createElement('div', { style: {fontSize:13,fontWeight:800,color:"#92400E",marginBottom:4} }, "⚠️ Posible duplicado detectado"),
+        React.createElement('div', { style: {fontSize:12,color:"#78350F",marginBottom:10} },
+          'El cliente "', React.createElement('strong',null, dupWarning.nombre), '" ya fue cerrado desde Mis Clientes.',
+          React.createElement('br',null), "¿Es el mismo? Si es así, no lo agregues aquí para evitar contar las UF dos veces."
+        ),
+        React.createElement('div', { style: {display:"flex",gap:8} },
+          React.createElement('button', {
+            onClick: function(){ setDupWarning(null); setDupConfirmed(false); },
+            style: {flex:1,padding:"8px",fontSize:12,fontWeight:700,borderRadius:8,border:"1.5px solid #F59E0B",background:"#FEF3C7",cursor:"pointer",fontFamily:"inherit",color:"#92400E"}
+          }, "Sí, es el mismo — cancelar"),
+          React.createElement('button', {
+            onClick: function(){ setDupConfirmed(true); },
+            style: {flex:1,padding:"8px",fontSize:12,fontWeight:700,borderRadius:8,border:"none",background:"#374151",color:"#fff",cursor:"pointer",fontFamily:"inherit"}
+          }, "No, es otro cliente")
+        )
+      )
+      , dupConfirmed && React.createElement('div', { style: {background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"8px 12px",marginBottom:8,fontSize:12,color:"#15803D",fontWeight:600} },
+        "✅ Confirmado como cliente diferente — puedes agregarlo."
+      )
+      , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}
         , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4476}}
           , React.createElement('label', { style: {fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4477}}, "UF del contrato *"   )
           , React.createElement('input', { type: "number", step: "0.01", min: "0", value: nc.uf,
