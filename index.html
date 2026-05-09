@@ -3342,11 +3342,25 @@ function abrirCalendario(cliente) {
             )
             , React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:32,boxShadow:"0 4px 20px rgba(233,7,41,.09)",border:"1px solid rgba(233,7,41,.08)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3199}}
               , enviado?(
-                React.createElement('div', { style: {textAlign:"center",padding:"48px 0"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3201}}
-                  , React.createElement('div', { style: {width:64,height:64,background:"#DCFCE7",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:28,fontWeight:900,color:"#16A34A"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3202}}, "V")
-                  , React.createElement('div', { style: {fontSize:24,fontWeight:900,color:RD,marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3203}}, "Reporte enviado!" )
-                  , React.createElement('div', { style: {color:"#6B7280",fontSize:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3204}}, "Datos registrados. El marcador del equipo ya se actualizo."        )
-                  , React.createElement('button', { onClick: function(){setEnviado(false);setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"",nota:"",hombres:"0",mujeres:"0",conecta:"0"}); }, style: Object.assign({},BTN,{marginTop:24}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3205}}, "Nuevo reporte" )
+                React.createElement('div', { style: {textAlign:"center",padding:"40px 0"} }
+                  , React.createElement('div', { style: {width:64,height:64,background:"#DCFCE7",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:28,fontWeight:900,color:"#16A34A"} }, "✓")
+                  , React.createElement('div', { style: {fontSize:24,fontWeight:900,color:RD,marginBottom:8} }, "¡Reporte enviado!")
+                  , React.createElement('div', { style: {color:"#6B7280",fontSize:14,marginBottom:24} }, "Datos registrados. El marcador del equipo ya se actualizo.")
+                  , React.createElement('div', { style: {background:"#FFF7ED",border:"1px solid #FCD34D",borderRadius:12,padding:"16px 20px",marginBottom:20,fontSize:14,color:"#92400E",fontWeight:600} }
+                    , "¿Ya terminaste por hoy? 👋"
+                    , React.createElement('br',null)
+                    , "Recuerda cerrar tu sesion para proteger tus datos."
+                  )
+                  , React.createElement('div', { style: {display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"} }
+                    , React.createElement('button', {
+                        onClick: function(){setEnviado(false);setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
+                        style: {padding:"12px 24px",border:"1.5px solid #E5E7EB",borderRadius:12,background:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:14,color:"#374151"}
+                      }, "Nuevo reporte")
+                    , React.createElement('button', {
+                        onClick: function(){setEnviado(false);setPinFormOk(false);setPinFormulario("");setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
+                        style: Object.assign({},BTN,{padding:"12px 24px",fontSize:14,background:"#C41230"})
+                      }, "🔒 Cerrar sesion")
+                  )
                 )
               ):(
                 React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3208}}
@@ -3381,18 +3395,24 @@ function abrirCalendario(cliente) {
                     )
                   )
                   , form.vid !== "" && pinFormOk && (
-                    React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3240}}
-                  , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:RD,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3241}}, "1. Actividad del día"   )
+                    React.createElement('div', null
+                  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16} }
+                    , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:RD,textTransform:"uppercase",letterSpacing:"0.1em"} }, "1. Actividad del día")
+                    , React.createElement('button', {
+                        onClick: function(){setPinFormOk(false);setPinFormulario("");},
+                        style: {background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:10,padding:"6px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}
+                      }, "🔒 Cerrar sesion")
+                  )
                   , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3242}}
 
                     , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:12,padding:"12px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3244}}
                       , React.createElement('label', { style: Object.assign({},LBL,{fontSize:11,marginBottom:4}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3245}}, "Contactos efectivos" )
-                      , React.createElement('input', { type: "number", min: "0", value: form.contactos, onChange: function(e){setForm(Object.assign({},form,{contactos:e.target.value}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3246}} )
+                      , React.createElement('input', { type: "number", min: "0", value: form.contactos, onChange: function(e){setForm(Object.assign({},form,{contactos:e.target.value}));}, onFocus: function(e){if(e.target.value==="0")setForm(Object.assign({},form,{contactos:""}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3246}} )
                     )
 
                     , React.createElement('div', { style: {background:"#F8FAFC",borderRadius:12,padding:"12px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3249}}
                       , React.createElement('label', { style: Object.assign({},LBL,{fontSize:11,marginBottom:4}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3250}}, "Cotizaciones enviadas" )
-                      , React.createElement('input', { type: "number", min: "0", value: form.cot, onChange: function(e){setForm(Object.assign({},form,{cot:e.target.value}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3251}} )
+                      , React.createElement('input', { type: "number", min: "0", value: form.cot, onChange: function(e){setForm(Object.assign({},form,{cot:e.target.value}));}, onFocus: function(e){if(e.target.value==="0")setForm(Object.assign({},form,{cot:""}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3251}} )
                     )
 
                     , React.createElement('div', { style: {background:"#F0FDF4",borderRadius:12,padding:"12px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3254}}
@@ -4190,53 +4210,81 @@ function abrirCalendario(cliente) {
                     , React.createElement('div', { style: {overflowX:"auto"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3724}}
                       , React.createElement('table', { style: {width:"100%",borderCollapse:"collapse",fontSize:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3725}}
                         , React.createElement('thead', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3726}}, React.createElement('tr', { style: {background:"#F8FAFC",borderBottom:"2px solid #E5E7EB"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3726}}, ["#","Ejecutivo","RUT","Meta UF","UF actuales","DPS actuales"].map(function(h){return React.createElement('th', { key: h, style: {padding:"12px 14px",textAlign:"left",fontSize:11,color:"#6B7280",fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3726}}, h);})))
-                        , React.createElement('tbody', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3727}}
+                        , React.createElement('tbody', null
                           , equipo.map(function(v,i){const e=bulk[v.id]||{uf:"",dps:""};return (
-                            React.createElement('tr', { key: v.id, style: {borderBottom:"1px solid #F0F4FA",background:i%2===0?"#fff":"#FAFBFF"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3729}}
-                              , React.createElement('td', { style: {padding:"12px 14px",color:"#9CA3AF",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3730}}, i+1)
-                              , React.createElement('td', { style: {padding:"12px 14px",fontWeight:700,color:RD,whiteSpace:"nowrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3731}}, v.nombre)
-                              , React.createElement('td', { style: {padding:"12px 14px",fontFamily:"monospace",fontSize:12,color:"#1D4ED8",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3731}}, v.rut||"—")
-                              , React.createElement('td', { style: {padding:"12px 14px",color:"#6B7280"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3732}}, v.metaUF+" UF")
-                              , React.createElement('td', { style: {padding:"10px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3733}}
-                                , React.createElement('input', { type: "number", step: "0.001", min: "0", value: e.uf!==""?e.uf:String(v.uf||0),
+                            React.createElement('tr', { key: v.id, style: {borderBottom:"1px solid #F0F4FA",background:i%2===0?"#fff":"#FAFBFF"}}
+                              , React.createElement('td', { style: {padding:"12px 14px",color:"#9CA3AF",fontWeight:700}}, i+1)
+                              , React.createElement('td', { style: {padding:"12px 14px",fontWeight:700,color:RD,whiteSpace:"nowrap"}}, v.nombre)
+                              , React.createElement('td', { style: {padding:"12px 14px",fontFamily:"monospace",fontSize:12,color:"#1D4ED8",fontWeight:700}}, v.rut||"—")
+                              , React.createElement('td', { style: {padding:"12px 14px",color:"#6B7280"}}, v.metaUF+" UF")
+                              , React.createElement('td', { style: {padding:"10px 14px"}}
+                                , React.createElement('input', { type: "number", step: "0.001", min: "0",
+                                  value: e.uf!==""?e.uf:"",
+                                  placeholder: String(v.uf||0),
                                   onChange: function(ev){const b=Object.assign({},bulk);b[v.id]=Object.assign({},b[v.id],{uf:ev.target.value});setBulk(b);},
-                                  style: {width:90,padding:"8px 10px",fontSize:13,borderRadius:9,border:"1.5px solid "+(e.uf!==""?R:"#E5E7EB"),background:e.uf!==""?BG:"#FAFAFA",fontFamily:"inherit",outline:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3734}} )
+                                  style: {width:90,padding:"8px 10px",fontSize:13,borderRadius:9,border:"1.5px solid "+(e.uf!==""?R:"#E5E7EB"),background:e.uf!==""?BG:"#FAFAFA",fontFamily:"inherit",outline:"none"}} )
                                 , (function(){
                                   var repUF=(v.rep||[]).reduce(function(s,r){return s+(r.uf||0);},0);
                                   var supUF=e.uf!==""?parseFloat(e.uf):v.uf;
                                   var diff=parseFloat((Math.abs(supUF-repUF)).toFixed(1));
-                                  if(diff>0.05&&repUF>0) return React.createElement('div', { style: {fontSize:9,color:"#D97706",marginTop:3,fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3741}}, "Agente: "+fmtUF(repUF)+" UF (dif "+diff+")");
+                                  if(diff>0.05&&repUF>0) return React.createElement('div', { style: {fontSize:9,color:"#D97706",marginTop:3,fontWeight:700}}, "Agente: "+fmtUF(repUF)+" UF (dif "+diff+")");
                                   return null;
                                 })()
                               )
-                              , React.createElement('td', { style: {padding:"10px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3745}}
-                                , React.createElement('input', { type: "number", min: "0", value: e.dps!==""?e.dps:String(v.dps||0),
+                              , React.createElement('td', { style: {padding:"10px 14px"}}
+                                , React.createElement('input', { type: "number", min: "0",
+                                  value: e.dps!==""?e.dps:"",
+                                  placeholder: String(v.dps||0),
                                   onChange: function(ev){const b=Object.assign({},bulk);b[v.id]=Object.assign({},b[v.id],{dps:ev.target.value});setBulk(b);},
-                                  style: {width:70,padding:"8px 10px",fontSize:13,borderRadius:9,border:"1.5px solid "+(e.dps!==""?"#16A34A":"#E5E7EB"),background:e.dps!==""?"#F0FDF4":"#FAFAFA",fontFamily:"inherit",outline:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3746}} )
+                                  style: {width:70,padding:"8px 10px",fontSize:13,borderRadius:9,border:"1.5px solid "+(e.dps!==""?"#16A34A":"#E5E7EB"),background:e.dps!==""?"#F0FDF4":"#FAFAFA",fontFamily:"inherit",outline:"none"}} )
                                 , (function(){
                                   var repDPS=(v.rep||[]).reduce(function(s,r){return s+(r.dps||0);},0);
                                   var supDPS=e.dps!==""?parseInt(e.dps):v.dps;
                                   var diff=Math.abs(supDPS-repDPS);
-                                  if(diff>0&&repDPS>0) return React.createElement('div', { style: {fontSize:9,color:"#D97706",marginTop:3,fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3753}}, "Agente: "+repDPS+" DPS (dif "+diff+")");
+                                  if(diff>0&&repDPS>0) return React.createElement('div', { style: {fontSize:9,color:"#D97706",marginTop:3,fontWeight:700}}, "Agente: "+repDPS+" DPS (dif "+diff+")");
                                   return null;
                                 })()
                               )
                             )
                           );})
+                          /* FILA DE TOTALES */
+                          , React.createElement('tr', { style: {borderTop:"3px solid "+RD,background:"#FFF0F2"}}
+                            , React.createElement('td', { colSpan: 4, style: {padding:"12px 14px",fontWeight:900,color:RD,fontSize:14,textTransform:"uppercase",letterSpacing:"0.05em"}}, "TOTAL EQUIPO")
+                            , React.createElement('td', { style: {padding:"12px 14px",fontWeight:900,color:RD,fontSize:16}},
+                              (function(){
+                                var tot = equipo.reduce(function(s,v){
+                                  var e=bulk[v.id]||{};
+                                  return s+(e.uf!==""&&e.uf!==undefined?parseFloat(e.uf)||0:v.uf||0);
+                                },0);
+                                return fmtUF(tot)+" UF";
+                              })()
+                            )
+                            , React.createElement('td', { style: {padding:"12px 14px",fontWeight:900,color:"#16A34A",fontSize:16}},
+                              (function(){
+                                var tot = equipo.reduce(function(s,v){
+                                  var e=bulk[v.id]||{};
+                                  return s+(e.dps!==""&&e.dps!==undefined?parseInt(e.dps)||0:v.dps||0);
+                                },0);
+                                return tot+" DPS";
+                              })()
+                            )
+                          )
                         )
                       )
                     )
                     , React.createElement('div', { style: {display:"flex",gap:12,marginTop:22,alignItems:"center",flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3762}}
                       , React.createElement('button', { onClick: guardarBulk, style: Object.assign({},BTN,{padding:"14px 36px",fontSize:16}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3763}}, "Guardar y actualizar marcador"   )
                       , React.createElement('button', { onClick: function(){const c={};equipo.forEach(function(v){c[v.id]={uf:"",dps:""};});setBulk(c);}, style: {padding:"14px 20px",border:"1.5px solid #E5E7EB",borderRadius:12,background:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:14,color:"#6B7280"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3764}}, "Limpiar campos" )
-                      , bulkOk&&React.createElement('div', { style: {background:"#DCFCE7",color:"#15803D",borderRadius:10,padding:"12px 18px",fontWeight:700,fontSize:14}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3765}}, "Guardado! El marcador ya se actualizo."     )
+                      , bulkOk&&React.createElement('div', { style: {background:"#DCFCE7",color:"#15803D",borderRadius:10,padding:"12px 18px",fontWeight:700,fontSize:14} },
+                        "✅ Guardado! Total equipo: "+(function(){return fmtUF(equipo.reduce(function(s,v){return s+v.uf;},0));}())+" UF — "+equipo.reduce(function(s,v){return s+v.dps;},0)+" DPS"
+                      )
                     )
                   )
                 )
 
                 , supVista==="editar"&&React.createElement(EditarDatosView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3770}} )
                 , supVista==="meta"&&React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:18} },
-                  React.createElement(MetasIndividualesView, { equipo: equipo, setEquipo: setEquipo }),
+                  React.createElement(MetasIndividualesView, { equipo: equipo, setEquipo: setEquipo, setMetaEquipo: setMetaEquipo }),
                   React.createElement(EditarMetaEquipo, { metaEquipo: metaEquipo, setMetaEquipo: setMetaEquipo, premioConecta: premioConecta, setPremioConecta: setPremioConecta, nombrePremio: nombrePremio, setNombrePremio: setNombrePremio })
                 )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
@@ -4507,26 +4555,40 @@ function Top5Lookup({ equipo }) {
 }
 
 // ── Top 5 Badge ───────────────────────────────────────────────────
+function normalizarNombre(n) {
+  // Normaliza nombre: elimina tildes, minúsculas, colapsa espacios
+  return (n||"").trim().toUpperCase()
+    .replace(/Á/g,"A").replace(/É/g,"E").replace(/Í/g,"I").replace(/Ó/g,"O").replace(/Ú/g,"U")
+    .replace(/Ü/g,"U").replace(/Ñ/g,"N")
+    .replace(/\s+/g," ");
+}
+function nombreCoincide(a, b) {
+  var na = normalizarNombre(a);
+  var nb = normalizarNombre(b);
+  if (na === nb) return true;
+  // Compara todas las palabras: si comparten al menos 2 palabras únicas de 4+ letras
+  var pa = na.split(" ").filter(function(w){ return w.length >= 4; });
+  var pb = nb.split(" ").filter(function(w){ return w.length >= 4; });
+  var coincidencias = pa.filter(function(w){ return pb.indexOf(w) >= 0; }).length;
+  return coincidencias >= 2;
+}
+
 function Top5Badge({ nombre, hallMeses }) {
-  const anioActual = new Date().getFullYear();
-  const hoy = new Date();
-  const mesActual = hoy.getMonth(); // 0-indexed
   const HALL = hallMeses || window.HALL_MESES || [];
 
-  // Only count CLOSED months = those in HALL_MESES for this year
-  const mesesCerrados = HALL.filter(function(m){
-    return parseInt((m.label||"").split(" ").pop()) === anioActual;
-  }).length;
+  // Últimos 6 meses cerrados (los que están en HALL_MESES)
+  const ultimos6 = HALL.slice(-6);
+  const mesesCerrados = ultimos6.length;
 
-  // Count how many times in TOP5 of CLOSED months - use includes for partial name match
-  const nombreUp = (nombre||"").trim().toUpperCase();
-  const veces = HALL.filter(function(m){
-    const labelAnio = parseInt((m.label||"").split(" ").pop());
-    return labelAnio === anioActual && m.top && m.top.slice(0,5).some(function(t){
-      var tNombre = (t.nombre||"").trim().toUpperCase();
-      return tNombre === nombreUp || tNombre.includes(nombreUp) || nombreUp.includes(tNombre);
+  // Contar veces en TOP5 usando matching robusto
+  const veces = ultimos6.filter(function(m){
+    return m.top && m.top.slice(0,5).some(function(t){
+      return nombreCoincide(t.nombre, nombre);
     });
   }).length;
+
+  // También incluir año actual completo para el título
+  const anioActual = new Date().getFullYear();
 
   // Check if in TOP5 RIGHT NOW (current month, from equipo ranking)
   // This is computed externally and passed as prop when needed
@@ -4552,7 +4614,7 @@ function Top5Badge({ nombre, hallMeses }) {
     React.createElement('div', { style: {background:bg,borderRadius:16,padding:"18px 20px",border:"2px solid "+brd,marginBottom:16,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3966}}
       , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:"#C41230",letterSpacing:"0.05em",marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3967}}, "Cantidad de veces que has sido TOP 5 en el año "           , anioActual)
       , React.createElement('div', { style: {fontSize:64,fontWeight:900,color:"#D4A017",lineHeight:1,marginBottom:4,textShadow:"0 2px 8px rgba(212,160,23,.3)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3968}}, veces)
-      , React.createElement('div', { style: {fontSize:11,color:"#9CA3AF",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3969}}, "de " , mesesCerrados, " " , mesesCerrados===1?"mes cerrado":"meses cerrados", " en "  , anioActual)
+      , React.createElement('div', { style: {fontSize:11,color:"#9CA3AF",marginBottom:10} }, "de " , mesesCerrados, " " , mesesCerrados===1?"mes cerrado":"meses cerrados", " (ultimos 6 meses)")
       , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:color,lineHeight:1.4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3970}}, msgs[Math.min(veces,12)])
     )
   );
@@ -4675,8 +4737,14 @@ function ProdEditableInner({ v, equipo, setEquipo, guardarProductividad, guardan
           )
         )
       )
-      , React.createElement('button', { onClick: guardarCambios, style: {width:"100%",padding:"16px",background:guardandoProd?"#16A34A":RD,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:20,transition:"background .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4091}}
+      , React.createElement('button', { onClick: guardarCambios, style: {width:"100%",padding:"16px",background:guardandoProd?"#16A34A":RD,color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:guardandoProd?8:20,transition:"background .3s"}}
         , guardandoProd ? "✅ ¡Guardado! El dashboard ya refleja los cambios" : "💾 Guardar mis cambios"
+      )
+      , guardandoProd && React.createElement('div', { style: {background:"#FFF7ED",border:"1px solid #FCD34D",borderRadius:10,padding:"14px 16px",marginBottom:16,textAlign:"center"} }
+        , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"#92400E",marginBottom:10} }, "¿Ya terminaste de actualizar? 👋 Recuerda cerrar tu sesion.")
+        , React.createElement('button', { onClick: function(){ if(typeof histLogout==="function") histLogout(); },
+            style: {background:"#C41230",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontSize:14,cursor:"pointer",fontFamily:"inherit",fontWeight:700}
+          }, "🔒 Cerrar sesion"
       )
       , React.createElement(HistorialPersonal, { histV: v, histLogout: function(){}, info: info, hallMeses: (typeof HALL_MESES !== "undefined" ? HALL_MESES : []) })
     )
@@ -5295,48 +5363,57 @@ function UFLinealesView({ equipo, info }) {
 
 
 // ── Agentes en 0 ─────────────────────────────────────────────────
-function MetasIndividualesView({ equipo, setEquipo }) {
+function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo }) {
   var RD = "#C41230", R = "#E9192A";
   var [saved, setSaved] = useState(false);
-  // Local copy of metas to edit
   var [metas, setMetas] = useState(function() {
     return equipo.map(function(v) {
-      // Metas semanales: lo que se compromete a lograr CADA semana (no acumulado)
-      var ms = v.metasSemanas || [
+      var ms = v.metasSemanas && v.metasSemanas.length === 4 ? v.metasSemanas : [
         Math.round(v.metaUF * 0.25),
         Math.round(v.metaUF * 0.25),
         Math.round(v.metaUF * 0.25),
         Math.round(v.metaUF * 0.25)
       ];
-      return { id: v.id, nombre: v.nombre, metaMes: v.metaUF, semanas: ms.slice(0,4) };
+      return { id: v.id, nombre: v.nombre, ufActual: v.uf||0, semanas: ms.slice(0,4) };
     });
   });
 
-  function updateMeta(id, field, value) {
+  function updateSem(id, si, value) {
     setMetas(metas.map(function(m) {
       if (m.id !== id) return m;
-      if (field === "mes") return Object.assign({}, m, { metaMes: value });
       var s = m.semanas.slice();
-      s[field] = value;
+      s[si] = value === "" ? 0 : (parseFloat(value) || 0);
       return Object.assign({}, m, { semanas: s });
     }));
   }
+
+  function metaMes(m) { return m.semanas.reduce(function(s,x){return s+(x||0);},0); }
+
+  // Totales por columna
+  var totSem = [0,1,2,3].map(function(si){
+    return metas.reduce(function(s,m){ return s+(m.semanas[si]||0); },0);
+  });
+  var totMes = metas.reduce(function(s,m){ return s+metaMes(m); },0);
 
   function guardar() {
     setEquipo(equipo.map(function(v) {
       var m = metas.find(function(x) { return x.id === v.id; });
       if (!m) return v;
-      return Object.assign({}, v, { metaUF: m.metaMes, metasSemanas: m.semanas });
+      return Object.assign({}, v, { metaUF: metaMes(m), metasSemanas: m.semanas });
     }));
+    // Actualizar meta global del equipo = suma de todas las metas mes
+    if (typeof setMetaEquipo === "function") setMetaEquipo(totMes);
     setSaved(true);
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  function inp(id, field, val) {
+  function inp(id, si, val) {
     return React.createElement('input', {
-      type: "number", min: "0", step: "1", value: val === 0 ? "" : val,
+      type: "number", min: "0", step: "1",
+      value: val === 0 ? "" : val,
       placeholder: "0",
-      onChange: function(e) { updateMeta(id, field, parseFloat(e.target.value) || 0); },
+      onChange: function(e) { updateSem(id, si, e.target.value); },
+      onFocus: function(e) { if(parseFloat(e.target.value)===0) e.target.value=""; },
       style: { width: "100%", padding: "6px 8px", fontSize: 13, fontWeight: 700, borderRadius: 8,
                border: "1.5px solid #E5E7EB", textAlign: "center", fontFamily: "inherit",
                outline: "none", background: "#FAFAFA", color: "#1F2937" }
@@ -5352,54 +5429,66 @@ function MetasIndividualesView({ equipo, setEquipo }) {
     boxShadow: "0 4px 20px rgba(233,7,41,.09)", border: "1px solid rgba(233,7,41,.1)" } },
     React.createElement('div', { style: { fontSize: 18, fontWeight: 900, color: RD, marginBottom: 4 } },
       "📋 Metas individuales por semana y mes"),
-    React.createElement('div', { style: { fontSize: 12, color: "#9CA3AF", marginBottom: 20 } },
-      "Define lo que cada ejecutivo se compromete a lograr en cada semana (meta semanal, no acumulada) y la meta total del mes."),
+    React.createElement('div', { style: { fontSize: 12, color: "#9CA3AF", marginBottom: 8 } },
+      "Ingresa la meta de cada semana — el Total Mes se calcula automaticamente como la suma. El total del equipo se actualiza como meta general al guardar."),
+    React.createElement('div', { style: { background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "8px 14px", marginBottom: 16, fontSize: 12, color: "#92400E" } },
+      "💡 La Meta Mes de cada ejecutivo es la suma de sus 4 semanas. El total del equipo define la meta general del dashboard."),
     React.createElement('div', { style: { overflowX: "auto" } },
       React.createElement('table', { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
         React.createElement('thead', null,
           React.createElement('tr', null,
-            React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: "left", paddingLeft: 12 }) }, "Ejecutivo"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[0] }) }, "Sem 1 (UF)"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[1] }) }, "Sem 2 (UF)"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[2] }) }, "Sem 3 (UF)"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: sem_colors[3] }) }, "Sem 4 (UF)"),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900 }) }, "🏁 META MES")
+            React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: "left", paddingLeft: 12, minWidth: 160 }) }, "Ejecutivo"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { minWidth: 70 }) }, "UF actual"),
+            [0,1,2,3].map(function(si){
+              return React.createElement('th', { key: si, style: Object.assign({}, thStyle, { color: sem_colors[si], minWidth: 80 }) },
+                "Sem "+(si+1)+" (UF)");
+            }),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900, minWidth: 90, background: "#FFF0F2" }) }, "🏁 META MES")
           )
         ),
         React.createElement('tbody', null,
           metas.map(function(m, i) {
+            var mes = metaMes(m);
             var bg = i % 2 === 0 ? "#fff" : "#FAFBFF";
             return React.createElement('tr', { key: m.id, style: { background: bg, borderBottom: "1px solid #F0F4FA" } },
               React.createElement('td', { style: { padding: "10px 12px", fontWeight: 700, color: RD, whiteSpace: "nowrap", fontSize: 12 } },
-                m.nombre
-              ),
+                m.nombre),
+              React.createElement('td', { style: { padding: "10px 8px", textAlign: "center", fontSize: 12, color: "#374151", fontWeight: 600 } },
+                fmtUF(m.ufActual)+" UF"),
               [0,1,2,3].map(function(si) {
                 return React.createElement('td', { key: si, style: { padding: "8px 6px", textAlign: "center" } },
                   inp(m.id, si, m.semanas[si] || 0)
                 );
               }),
-              React.createElement('td', { style: { padding: "8px 6px", textAlign: "center" } },
-                React.createElement('input', {
-                  type: "number", min: "0", step: "1",
-                  value: m.metaMes === 0 ? "" : m.metaMes,
-                  placeholder: "0",
-                  onChange: function(e) { updateMeta(m.id, "mes", parseFloat(e.target.value) || 0); },
-                  style: { width: "100%", padding: "6px 8px", fontSize: 14, fontWeight: 900, borderRadius: 8,
-                           border: "2px solid "+RD, textAlign: "center", fontFamily: "inherit",
-                           outline: "none", background: "#FFF0F2", color: RD }
-                })
+              React.createElement('td', { style: { padding: "8px 10px", textAlign: "center", background: "#FFF0F2", fontWeight: 900, color: RD, fontSize: 15 } },
+                mes > 0 ? mes+" UF" : "—"
               )
             );
-          })
+          }),
+          /* FILA TOTALES */
+          React.createElement('tr', { style: { borderTop: "3px solid "+RD, background: "#FFF0F2" } },
+            React.createElement('td', { style: { padding: "12px 12px", fontWeight: 900, color: RD, fontSize: 13, textTransform: "uppercase" } }, "TOTAL EQUIPO"),
+            React.createElement('td', { style: { padding: "12px 8px", textAlign: "center", fontWeight: 900, color: "#374151", fontSize: 13 } },
+              fmtUF(equipo.reduce(function(s,v){return s+(v.uf||0);},0))+" UF"),
+            [0,1,2,3].map(function(si){
+              return React.createElement('td', { key: si, style: { padding: "12px 6px", textAlign: "center", fontWeight: 900, color: sem_colors[si], fontSize: 14 } },
+                totSem[si]+" UF");
+            }),
+            React.createElement('td', { style: { padding: "12px 10px", textAlign: "center", fontWeight: 900, color: RD, fontSize: 16, background: "#FFE4E8" } },
+              totMes+" UF"
+            )
+          )
         )
       )
     ),
+    React.createElement('div', { style: { marginTop: 16, padding: "12px 16px", background: "#F0FDF4", borderRadius: 10, border: "1px solid #86EFAC", fontSize: 13, color: "#15803D", fontWeight: 700 } },
+      "📊 Meta total del equipo si se guardan estos valores: ", totMes, " UF"),
     React.createElement('button', {
       onClick: guardar,
-      style: { marginTop: 20, width: "100%", padding: "14px", background: saved ? "#16A34A" : R,
+      style: { marginTop: 12, width: "100%", padding: "14px", background: saved ? "#16A34A" : R,
                color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700,
                cursor: "pointer", transition: "background .3s" }
-    }, saved ? "✅ ¡Metas guardadas!" : "💾 Guardar metas del equipo")
+    }, saved ? "✅ ¡Metas guardadas! Meta del equipo actualizada a "+totMes+" UF" : "💾 Guardar metas y actualizar meta del equipo")
   );
 }
 
