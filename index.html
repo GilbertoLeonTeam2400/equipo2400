@@ -3463,8 +3463,11 @@ function abrirCalendario(cliente) {
                   cumpleMes.length > 0
                     ? React.createElement('div', { style: {textAlign:"center"} },
                         React.createElement('div', { style: {fontSize:32,marginBottom:8} }, "🎂🎉🎊"),
+                        React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"rgba(255,255,255,.85)",marginBottom:8,letterSpacing:"0.02em",lineHeight:1.5} },
+                          "Este mes celebramos la vida de "+(cumpleMes.length===1?"CRACK":"CRACKS")+" de este TEAM que "+(cumpleMes.length===1?"está":"están")+" de Cumpleaños!!"
+                        ),
                         React.createElement('div', { style: {fontSize:cumpleMes.length===1?"22px":"18px",fontWeight:900,color:"#FCD34D",marginBottom:16,letterSpacing:"0.04em",textTransform:"uppercase",textShadow:"0 2px 8px rgba(0,0,0,.3)"} },
-                          "🌟 FELICITACIONES "+(cumpleMes.length===1?"CRACK":"CRACKS")+"! 🌟"
+                          "🌟 ¡Feliz Cumpleaños!! 🌟"
                         ),
                         React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap",marginBottom:12} },
                           cumpleMes.map(function(c,ci){
