@@ -3417,6 +3417,10 @@ function abrirCalendario(cliente) {
                 if(parts.length<2) return false;
                 return parseInt(parts[1])===mesActual;
               });
+              // Agregar cumpleaños del supervisor (24 de Noviembre)
+              if(mesActual===11) {
+                cumpleMes = [{nombre:"Supervisor", fotoUrl:null, esSupervisor:true}].concat(cumpleMes);
+              }
 
               return React.createElement('div', null,
                 React.createElement('div', { style: {background:"linear-gradient(135deg,#C41230,#8B0000)",borderRadius:16,padding:"20px 24px",marginBottom:16,boxShadow:"0 4px 20px rgba(196,18,48,.25)",textAlign:"center"} },
@@ -3434,21 +3438,23 @@ function abrirCalendario(cliente) {
                     var displayNombre = formatNombreCrak(m);
                     var nombreParts = displayNombre.split(' CRACK ');
 
-                    return React.createElement('div', { key: idx, style: {background:cardBg,borderRadius:14,padding:"14px 10px",textAlign:"center",border:borderStyle,boxShadow:"0 3px 12px rgba(0,0,0,.2)",position:"relative"} },
+                    return React.createElement('div', { key: idx, style: {background:cardBg,borderRadius:14,padding:"6px 6px 10px",textAlign:"center",border:borderStyle,boxShadow:"0 3px 12px rgba(0,0,0,.2)",position:"relative",display:"flex",flexDirection:"column",alignItems:"center"} },
                       m.esLider && React.createElement('div', { style: {position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:"#FCD34D",color:"#7F1D1D",fontSize:9,fontWeight:900,padding:"2px 8px",borderRadius:99,whiteSpace:"nowrap",letterSpacing:"0.05em"} }, "👑 LÍDER"),
-                      React.createElement('div', { style: {width:90,height:90,borderRadius:"50%",margin:"6px auto 12px",border:m.esLider?"3px solid #FCD34D":"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0} },
+                      React.createElement('div', { style: {width:130,height:130,borderRadius:"50%",margin:"10px auto 0",border:m.esLider?"3px solid #FCD34D":"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0} },
                         fotoUrl
                           ? React.createElement('img', { src: fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: m.nombre })
-                          : React.createElement('span', { style: {fontSize:30,fontWeight:900,color:"#FCD34D"} }, initials)
+                          : React.createElement('span', { style: {fontSize:42,fontWeight:900,color:"#FCD34D"} }, initials)
                       ),
-                      nombreParts.length===2
-                        ? React.createElement('div', { style: {fontSize:10,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:2} },
-                            React.createElement('span', null, nombreParts[0]+' '),
-                            React.createElement('span', { style: {color:"#FCD34D",fontSize:9} }, 'CRACK '),
-                            React.createElement('span', null, nombreParts[1])
-                          )
-                        : React.createElement('div', { style: {fontSize:10,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:2} }, displayNombre),
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.06em"} }, m.cargo)
+                      React.createElement('div', { style: {marginTop:"auto",paddingTop:8} },
+                        nombreParts.length===2
+                          ? React.createElement('div', { style: {fontSize:10,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:2} },
+                              React.createElement('span', null, nombreParts[0]+' '),
+                              React.createElement('span', { style: {color:"#FCD34D",fontSize:9} }, 'CRACK '),
+                              React.createElement('span', null, nombreParts[1])
+                            )
+                          : React.createElement('div', { style: {fontSize:10,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:2} }, displayNombre),
+                        React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.06em"} }, m.cargo)
+                      )
                     );
                   })
                 ),
@@ -4346,19 +4352,50 @@ function abrirCalendario(cliente) {
                               )
                               , React.createElement('td', { style: {padding:"10px 12px",color:"#6B7280",fontFamily:"monospace",fontWeight:700,fontSize:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3700}}, v.pin)
                               , React.createElement('td', { style: {padding:"10px 12px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3701}}, React.createElement('span', { style: {background:"rgba(233,7,41,.08)",color:"#E9192A",fontWeight:700,borderRadius:8,padding:"3px 8px",fontSize:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3701}}, v.metaUF+" UF"))
-                              , React.createElement('td', { style: {padding:"10px 12px"} }
-                                , React.createElement('input', { 
-                                    type: "date",
-                                    defaultValue: v.fechaNac||"",
-                                    title: "Fecha de nacimiento",
-                                    onBlur: function(e){ 
-                                      var val=e.target.value; 
-                                      var newEq=equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fechaNac:val}) : eq; });
-                                      setEquipo(newEq);
-                                      if(window.__fbDb){ window.__fbDoc(window.__fbDb,"equipo2400","datos").get().then(function(snap){ var d=snap.data()||{}; var arr=(d.equipo||[]).map(function(eq){ return eq.id===v.id?Object.assign({},eq,{fechaNac:val}):eq; }); window.__fbDoc(window.__fbDb,"equipo2400","datos").set(Object.assign({},d,{equipo:arr})); }); }
+                              , React.createElement('td', { style: {padding:"10px 12px"} },
+                                (function(){
+                                  var partsNac = (v.fechaNac||"").split('-');
+                                  var diaVal = partsNac.length>=2 ? partsNac[0] : "";
+                                  var mesVal = partsNac.length>=2 ? partsNac[1] : "";
+                                  return React.createElement('div', { style: {display:"flex",gap:4,alignItems:"center"} },
+                                    React.createElement('input', {
+                                      type: "number", min: "1", max: "31", placeholder: "DD",
+                                      defaultValue: diaVal,
+                                      title: "Día de cumpleaños",
+                                      onBlur: function(e){
+                                        var dia = e.target.value.padStart(2,"0");
+                                        var mesEl = e.target.parentNode.querySelector('select');
+                                        var mes = mesEl ? mesEl.value : mesVal;
+                                        if(!dia||!mes) return;
+                                        var val = dia+"-"+mes;
+                                        var newEq=equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fechaNac:val}) : eq; });
+                                        setEquipo(newEq);
+                                        if(window.__fbDb){ window.__fbDoc(window.__fbDb,"equipo2400","datos").get().then(function(snap){ var d=snap.data()||{}; var arr=(d.equipo||[]).map(function(eq){ return eq.id===v.id?Object.assign({},eq,{fechaNac:val}):eq; }); window.__fbDoc(window.__fbDb,"equipo2400","datos").set(Object.assign({},d,{equipo:arr})); }); }
+                                      },
+                                      style: {width:44,padding:"4px 5px",fontSize:11,borderRadius:7,border:"1.5px solid #D1D5DB",outline:"none",fontFamily:"inherit",color:"#374151",textAlign:"center"}
+                                    }),
+                                    React.createElement('select', {
+                                      defaultValue: mesVal,
+                                      title: "Mes de cumpleaños",
+                                      onChange: function(e){
+                                        var mes = e.target.value;
+                                        var diaEl = e.target.parentNode.querySelector('input');
+                                        var dia = diaEl ? diaEl.value.padStart(2,"0") : diaVal;
+                                        if(!dia||!mes) return;
+                                        var val = dia+"-"+mes;
+                                        var newEq=equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fechaNac:val}) : eq; });
+                                        setEquipo(newEq);
+                                        if(window.__fbDb){ window.__fbDoc(window.__fbDb,"equipo2400","datos").get().then(function(snap){ var d=snap.data()||{}; var arr=(d.equipo||[]).map(function(eq){ return eq.id===v.id?Object.assign({},eq,{fechaNac:val}):eq; }); window.__fbDoc(window.__fbDb,"equipo2400","datos").set(Object.assign({},d,{equipo:arr})); }); }
+                                      },
+                                      style: {padding:"4px 5px",fontSize:11,borderRadius:7,border:"1.5px solid #D1D5DB",outline:"none",fontFamily:"inherit",color:"#374151",background:"#fff"}
                                     },
-                                    style: {padding:"4px 6px",fontSize:11,borderRadius:7,border:"1.5px solid #D1D5DB",outline:"none",fontFamily:"inherit",color:"#374151",width:130}
-                                  })
+                                      React.createElement('option',{value:""},"Mes"),
+                                      [["01","Ene"],["02","Feb"],["03","Mar"],["04","Abr"],["05","May"],["06","Jun"],["07","Jul"],["08","Ago"],["09","Sep"],["10","Oct"],["11","Nov"],["12","Dic"]].map(function(m){
+                                        return React.createElement('option',{key:m[0],value:m[0]},m[1]);
+                                      })
+                                    )
+                                  );
+                                })()
                               )
                               , React.createElement('td', { style: {padding:"10px 12px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3705}}, React.createElement('button', { onClick: function(){if(window.confirm("Eliminar a "+v.nombre+"?"))eliminarEjecutivo(v.id);}, style: {background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3705}}, "🗑️")
                               , React.createElement('button', { onClick: function(){const n=window.prompt("Nuevo nombre:",v.nombre);if(n)renombrarEjecutivo(v.id,n);}, style: {background:"#EFF6FF",color:"#1D4ED8",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3706}}, "✏️")
