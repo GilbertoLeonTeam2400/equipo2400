@@ -3459,30 +3459,30 @@ function abrirCalendario(cliente) {
                   })
                 ),
 
-                React.createElement('div', { style: {background: cumpleMes.length>0 ? "linear-gradient(135deg,#7C3AED,#4F46E5)" : "#F8FAFC", borderRadius:16, padding:"20px 24px", border: cumpleMes.length>0 ? "2px solid #A78BFA" : "1px solid #E5E7EB", boxShadow: cumpleMes.length>0 ? "0 4px 24px rgba(124,58,237,.25)" : "none"} },
+                React.createElement('div', { style: {background: cumpleMes.length>0 ? "linear-gradient(135deg,#0a0a0a,#1a1a0a,#2a2000)" : "#F8FAFC", borderRadius:16, padding:"20px 24px", border: cumpleMes.length>0 ? "2px solid #C9A84C" : "1px solid #E5E7EB", boxShadow: cumpleMes.length>0 ? "0 4px 32px rgba(201,168,76,.35)" : "none"} },
                   cumpleMes.length > 0
                     ? React.createElement('div', { style: {textAlign:"center"} },
                         React.createElement('div', { style: {fontSize:32,marginBottom:8} }, "🎂🎉🎊"),
-                        React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"rgba(255,255,255,.85)",marginBottom:8,letterSpacing:"0.02em",lineHeight:1.5} },
-                          "Este mes celebramos la vida de "+(cumpleMes.length===1?"CRACK":"CRACKS")+" de este TEAM que "+(cumpleMes.length===1?"está":"están")+" de Cumpleaños!!"
+                        React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"rgba(201,168,76,.9)",marginBottom:8,letterSpacing:"0.02em",lineHeight:1.5} },
+                          "Este mes celebramos la vida de "+(cumpleMes.length===1?"un CRACK":"estos CRACKS")+" del TEAM!"
                         ),
-                        React.createElement('div', { style: {fontSize:cumpleMes.length===1?"22px":"18px",fontWeight:900,color:"#FCD34D",marginBottom:16,letterSpacing:"0.04em",textTransform:"uppercase",textShadow:"0 2px 8px rgba(0,0,0,.3)"} },
+                        React.createElement('div', { style: {fontSize:cumpleMes.length===1?"22px":"18px",fontWeight:900,color:"#FCD34D",marginBottom:16,letterSpacing:"0.04em",textTransform:"uppercase",textShadow:"0 2px 12px rgba(201,168,76,.6), 0 0 30px rgba(201,168,76,.3)"} },
                           "🌟 ¡Feliz Cumpleaños!! 🌟"
                         ),
                         React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap",marginBottom:12} },
                           cumpleMes.map(function(c,ci){
                             var initials = c.nombre ? c.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
                             return React.createElement('div', { key: ci, style: {textAlign:"center"} },
-                              React.createElement('div', { style: {width:72,height:72,borderRadius:"50%",border:"3px solid #FCD34D",overflow:"hidden",background:c.fotoUrl?"#000":"#6D28D9",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",boxShadow:"0 0 0 4px rgba(252,211,77,.3)"} },
+                              React.createElement('div', { style: {width:72,height:72,borderRadius:"50%",border:"3px solid #C9A84C",overflow:"hidden",background:c.fotoUrl?"#000":"#1a1500",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",boxShadow:"0 0 0 4px rgba(201,168,76,.25), 0 0 20px rgba(201,168,76,.2)"} },
                                 c.fotoUrl
                                   ? React.createElement('img', { src: c.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"} })
-                                  : React.createElement('span', { style: {fontSize:24,fontWeight:900,color:"#FCD34D"} }, initials)
+                                  : React.createElement('span', { style: {fontSize:24,fontWeight:900,color:"#C9A84C"} }, initials)
                               ),
-                              React.createElement('div', { style: {fontSize:11,fontWeight:900,color:"#fff",maxWidth:80} }, c.nombre)
+                              React.createElement('div', { style: {fontSize:11,fontWeight:900,color:"#FCD34D",maxWidth:80} }, c.nombre)
                             );
                           })
                         ),
-                        React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.8)"} }, "¡El equipo 2400 los celebra este mes! 🥳")
+                        React.createElement('div', { style: {fontSize:13,color:"rgba(201,168,76,.75)"} }, "¡El equipo 2400 los celebra este mes! 🥳")
                       )
                     : React.createElement('div', { style: {textAlign:"center",padding:"10px 0"} },
                         React.createElement('div', { style: {fontSize:28,marginBottom:6} }, "🎂"),
