@@ -2671,12 +2671,21 @@ function SupervisorFotoCard() {
             if (!file) return;
             var reader = new FileReader();
             reader.onload = function(ev) {
-              var dataUrl = ev.target.result;
-              window.__supFotoGlobal = dataUrl;
-              setSupFotoState(dataUrl);
-              if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
-                window.__fbSetDoc(window.__fbDoc(window.__fbDb,"supervisor","perfil"),{fotoUrl:dataUrl}).catch(function(){});
-              }
+              var img = new Image();
+              img.onload = function() {
+                var MAX = 400;
+                var w = img.width, h = img.height;
+                if (w > MAX || h > MAX) { var sc=Math.min(MAX/w,MAX/h); w=Math.round(w*sc); h=Math.round(h*sc); }
+                var canvas = document.createElement("canvas"); canvas.width=w; canvas.height=h;
+                canvas.getContext("2d").drawImage(img,0,0,w,h);
+                var dataUrl = canvas.toDataURL("image/jpeg",0.82);
+                window.__supFotoGlobal = dataUrl;
+                setSupFotoState(dataUrl);
+                if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
+                  window.__fbSetDoc(window.__fbDoc(window.__fbDb,"supervisor","perfil"),{fotoUrl:dataUrl}).catch(function(){});
+                }
+              };
+              img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
           }
@@ -2684,10 +2693,7 @@ function SupervisorFotoCard() {
       )
     ),
     React.createElement('div', {},
-      React.createElement('div', { style: {fontSize:11,color:"rgba(201,168,76,.7)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4,fontWeight:700}}, "👑 Mi foto — Supervisor"),
-      React.createElement('div', { style: {fontSize:15,fontWeight:900,color:"#FCD34D",marginBottom:6}}, "GILBERTO LEON DURAN"),
-      React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",lineHeight:1.5}}, "Esta foto aparece en la sección \"ESTOS SOMOS LOS CRACKS\" como líder del equipo."),
-      React.createElement('div', { style: {fontSize:11,color:"rgba(201,168,76,.6)",marginTop:6,fontStyle:"italic"}}, "⚡ No afecta las estadísticas del equipo.")
+      React.createElement('div', { style: {fontSize:15,fontWeight:900,color:"#FCD34D",marginBottom:6}}, "GILBERTO LEON DURAN")
     )
   );
 }
@@ -3353,7 +3359,7 @@ function SupervisorFotoCard() {
                     var cracks = equipo.filter(function(v){return v.uf>0;});
                     if(cracks.length===0) return React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic",padding:"6px 0"}}, "Aún no hay CRACKS sumando, ¡VAMOS!");
                     return React.createElement('div', { style: {background:"rgba(253,224,71,.07)",borderRadius:12,padding:"10px 12px"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700}}, "🌟 CRACKS que ya comenzaron a sumar!"),
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🌟 CRACKS que ya comenzaron a sumar!", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracks.length)),
                       React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
                         cracks.map(function(v){
                           var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
@@ -3367,7 +3373,7 @@ function SupervisorFotoCard() {
                 , (function(){
                     var sumaLineal = equipo.filter(function(v){return v.uf>=12;});
                     return React.createElement('div', { style: {background:"rgba(134,239,172,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(134,239,172,.2)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(134,239,172,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700}}, "⚡ CRACKS que ya aportan en la SUMA LINEAL del TEAM!"),
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(134,239,172,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "⚡ CRACKS que ya aportan en la SUMA LINEAL del TEAM!", React.createElement('span',{style:{background:"rgba(134,239,172,.3)",color:"#86EFAC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},sumaLineal.length)),
                       sumaLineal.length===0
                         ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "Aún nadie supera 12 UF — ¡vamos TEAM!")
                         : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
@@ -3383,7 +3389,7 @@ function SupervisorFotoCard() {
                 , (function(){
                     var comisionando = equipo.filter(function(v){return v.uf>=18;});
                     return React.createElement('div', { style: {background:"rgba(56,189,248,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(56,189,248,.2)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(125,211,252,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700}}, "💰 CRACKS ya Comisionando!"),
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(125,211,252,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "💰 CRACKS ya Comisionando!", React.createElement('span',{style:{background:"rgba(125,211,252,.3)",color:"#7DD3FC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},comisionando.length)),
                       comisionando.length===0
                         ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "¡A llegar a las 18 UF y activar la comisión!")
                         : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
@@ -3399,7 +3405,7 @@ function SupervisorFotoCard() {
                 , (function(){
                     var granRend = equipo.filter(function(v){return v.uf>=(info.elapsed<=14?12:25);});
                     return React.createElement('div', { style: {background:"rgba(253,224,71,.06)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(253,224,71,.2)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700}}, "🏆 Gran Rendimiento"),
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🏆 CRACKS CON GRAN RENDIMIENTO A LA FECHA", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},granRend.length)),
                       granRend.length===0
                         ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "¡El primer gran rendimiento está por llegar!")
                         : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
@@ -3572,7 +3578,7 @@ function SupervisorFotoCard() {
 
                     return React.createElement('div', { key: idx, style: {background:cardBg,borderRadius:12,padding:"4px 4px 8px",textAlign:"center",border:borderStyle,boxShadow:"0 3px 12px rgba(0,0,0,.2)",position:"relative",display:"flex",flexDirection:"column",alignItems:"center",minWidth:0} },
                       m.esLider && React.createElement('div', { style: {position:"absolute",top:-7,left:"50%",transform:"translateX(-50%)",background:"#FCD34D",color:"#7F1D1D",fontSize:7,fontWeight:900,padding:"2px 6px",borderRadius:99,whiteSpace:"nowrap",letterSpacing:"0.04em",zIndex:1} }, "👑 LÍDER"),
-                      React.createElement('div', { style: {width:"clamp(70px,22vw,110px)",height:"clamp(70px,22vw,110px)",borderRadius:"50%",margin:"10px auto 0",border:m.esLider?"3px solid #FCD34D":"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0} },
+                      React.createElement('div', { style: {width:"clamp(70px,22vw,110px)",height:"clamp(70px,22vw,110px)",borderRadius:"50%",margin:"10px auto 0",border:m.esLider?"3px solid #FCD34D":"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:m.esLider?"0 0 0 3px rgba(252,211,77,.4), 0 0 18px rgba(201,168,76,.5), inset 0 1px 0 rgba(252,211,77,.3)":"0 0 0 2px rgba(201,168,76,.25), 0 0 12px rgba(201,168,76,.3), inset 0 1px 0 rgba(252,211,77,.15)"} },
                         fotoUrl
                           ? React.createElement('img', { src: fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: m.nombre })
                           : React.createElement('span', { style: {fontSize:"clamp(20px,7vw,36px)",fontWeight:900,color:"#FCD34D"} }, initials)
@@ -4499,12 +4505,21 @@ function SupervisorFotoCard() {
                                           if (!file) return;
                                           var reader = new FileReader();
                                           reader.onload = function(ev) {
-                                            var dataUrl = ev.target.result;
-                                            var newEquipo = equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fotoUrl:dataUrl}) : eq; });
-                                            setEquipo(newEquipo);
-                                            if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
-                                              window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:newEquipo}).catch(function(err){console.warn("Foto save err",err);});
-                                            }
+                                            var img = new Image();
+                                            img.onload = function() {
+                                              var MAX = 400;
+                                              var w = img.width, h = img.height;
+                                              if (w > MAX || h > MAX) { var sc=Math.min(MAX/w,MAX/h); w=Math.round(w*sc); h=Math.round(h*sc); }
+                                              var canvas = document.createElement("canvas"); canvas.width=w; canvas.height=h;
+                                              canvas.getContext("2d").drawImage(img,0,0,w,h);
+                                              var dataUrl = canvas.toDataURL("image/jpeg",0.82);
+                                              var newEquipo = equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fotoUrl:dataUrl}) : eq; });
+                                              setEquipo(newEquipo);
+                                              if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
+                                                window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:newEquipo}).catch(function(err){console.warn("Foto save err",err);});
+                                              }
+                                            };
+                                            img.src = ev.target.result;
                                           };
                                           reader.readAsDataURL(file);
                                         }
@@ -5742,7 +5757,7 @@ function UFLinealesView({ equipo, info }) {
 
       // Intentar leer desde Firebase directamente (cubre meses sin HISTORIAL_EXCEL como Abril 2026)
       if (window.__fbDb && window.__fbDoc && window.__fbGetDoc) {
-        var ref = window.__fbDoc(window.__fbDb, "equipos", "equipo_" + mk);
+        var ref = window.__fbDoc(window.__fbDb, "equipos", mk);
         return window.__fbGetDoc(ref).then(function(snap) {
           if (snap.exists) {
             var d = snap.data();
@@ -5915,6 +5930,16 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo }) {
                   background: "#F8FAFC", borderBottom: "2px solid #E5E7EB" };
   var sem_colors = ["#3B82F6","#8B5CF6","#F59E0B","#16A34A"];
 
+  // Semana actual (0=sem1, 1=sem2, 2=sem3, 3=sem4) basada en día del mes
+  var diaHoyMetas = new Date().getDate();
+  var semHoyMetas = diaHoyMetas<=7?0:diaHoyMetas<=14?1:diaHoyMetas<=21?2:3;
+  // Meta acumulada esperada hasta la semana actual (sumamos sem[0..semHoyMetas])
+  function metaAcumEsperada(semanas) {
+    var acc = 0;
+    for (var i=0; i<=semHoyMetas; i++) acc += (semanas[i]||0);
+    return acc;
+  }
+
   return React.createElement('div', { style: { background: "#fff", borderRadius: 18, padding: "24px 22px",
     boxShadow: "0 4px 20px rgba(233,7,41,.09)", border: "1px solid rgba(233,7,41,.1)" } },
     React.createElement('div', { style: { fontSize: 18, fontWeight: 900, color: RD, marginBottom: 4 } },
@@ -5940,11 +5965,22 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo }) {
           metas.map(function(m, i) {
             var mes = metaMes(m);
             var bg = i % 2 === 0 ? "#fff" : "#FAFBFF";
+            var acumEsp = metaAcumEsperada(m.semanas);
+            var ufOk = acumEsp > 0 ? m.ufActual >= acumEsp : m.ufActual > 0;
+            var ufActualBg = acumEsp === 0 ? "transparent" : ufOk ? "#DCFCE7" : "#FEE2E2";
+            var ufActualColor = acumEsp === 0 ? "#374151" : ufOk ? "#15803D" : "#B91C1C";
+            var ufActualBorder = acumEsp === 0 ? "none" : ufOk ? "1px solid #86EFAC" : "1px solid #FCA5A5";
             return React.createElement('tr', { key: m.id, style: { background: bg, borderBottom: "1px solid #F0F4FA" } },
               React.createElement('td', { style: { padding: "10px 12px", fontWeight: 700, color: RD, whiteSpace: "nowrap", fontSize: 12 } },
                 m.nombre),
-              React.createElement('td', { style: { padding: "10px 8px", textAlign: "center", fontSize: 12, color: "#374151", fontWeight: 600 } },
-                fmtUF(m.ufActual)+" UF"),
+              React.createElement('td', { style: { padding: "6px 8px", textAlign: "center" } },
+                React.createElement('div', { style: { background: ufActualBg, border: ufActualBorder, borderRadius: 8, padding: "5px 8px", fontSize: 12, fontWeight: 900, color: ufActualColor, display: "inline-block", minWidth: 60 } },
+                  fmtUF(m.ufActual)+" UF",
+                  acumEsp > 0 && React.createElement('div', { style: { fontSize: 9, fontWeight: 600, opacity: .75, marginTop: 2 } },
+                    ufOk ? "✅ meta sem "+(semHoyMetas+1) : "meta: "+acumEsp+" UF"
+                  )
+                )
+              ),
               [0,1,2,3].map(function(si) {
                 return React.createElement('td', { key: si, style: { padding: "8px 6px", textAlign: "center" } },
                   inp(m.id, si, m.semanas[si] || 0)
@@ -6708,9 +6744,10 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
               // UF por semana real (agrupar reportes por semana del mes)
               var ufPorSemana = [0,0,0,0];
               reps.forEach(function(r) {
-                var fecha = r.fecha ? new Date(r.fecha.split("/").reverse().join("-")) : null;
-                if (!fecha) return;
-                var dia = fecha.getDate();
+                if (!r.fecha) return;
+                var pts = r.fecha.split("/"); // dd/mm/yyyy
+                var dia = parseInt(pts[0],10);
+                if (!dia) return;
                 var sem = dia<=7?0:dia<=14?1:dia<=21?2:3;
                 ufPorSemana[sem] += r.uf||0;
               });
@@ -6770,8 +6807,8 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
                 var lim = limSem[s];
                 return reps.filter(function(r){
                   if (!r.fecha) return false;
-                  var d = new Date(r.fecha.split("/").reverse().join("-"));
-                  var dia = d.getDate();
+                  var pts = r.fecha.split("/");
+                  var dia = parseInt(pts[0],10);
                   return dia >= lim[0] && dia <= lim[1];
                 }).reduce(function(sum,r){return sum+(r.uf||0);},0);
               }
