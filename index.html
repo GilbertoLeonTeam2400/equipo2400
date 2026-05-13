@@ -2723,17 +2723,52 @@ function SupervisorFotoCard() {
     const key = "equipo_" + info.mesKey;
     if (window.__fbDb && window.__fbDoc && window.__fbOnSnapshot) {
       const ref = window.__fbDoc(window.__fbDb, "equipos", key);
-      // Usamos una ref para saber si ya llegaron datos (no la variable loaded del closure)
       var fbRespondio = false;
+
+      // Cargar meses anteriores (hasta 6) desde Firebase y mezclar en historial
+      function cargarHistorialMesesAnteriores(equipoBase) {
+        if (!window.__fbGetDoc) return;
+        var offsets = [1,2,3,4,5,6];
+        var promises = offsets.map(function(offset) {
+          var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - offset);
+          var mk = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+          var fbKey = "equipo_" + mk;
+          var ref2 = window.__fbDoc(window.__fbDb, "equipos", fbKey);
+          return window.__fbGetDoc(ref2).then(function(snap2) {
+            if (!snap2.exists) return null;
+            var snapData2 = snap2.data();
+            if (!snapData2 || !Array.isArray(snapData2.equipo)) return null;
+            return { mk: mk, datos: snapData2.equipo };
+          }).catch(function(){ return null; });
+        });
+
+        Promise.all(promises).then(function(resultados) {
+          // Construir el equipo con historial enriquecido de una sola vez
+          var equipoEnriquecido = equipoBase.map(function(vBase) {
+            var histNuevo = Object.assign({}, vBase.historial || {});
+            resultados.forEach(function(res) {
+              if (!res) return;
+              var mk = res.mk;
+              // No sobreescribir si ya hay dato manual para ese mes
+              if (histNuevo[mk] && histNuevo[mk].uf > 0) return;
+              var vMes = res.datos.find(function(x){ return String(x.id)===String(vBase.id); });
+              if (!vMes || !(vMes.uf > 0)) return;
+              histNuevo[mk] = { uf: vMes.uf, dps: vMes.dps||0 };
+            });
+            return Object.assign({}, vBase, { historial: histNuevo });
+          });
+          setEquipo(equipoEnriquecido);
+          console.log("[HISTORIAL] Meses anteriores cargados OK");
+        });
+      }
+
       const unsub = window.__fbOnSnapshot(ref, function(snap) {
         fbRespondio = true;
-        // Si acabamos de guardar localmente, ignorar el primer snapshot de vuelta
         if (skipSnapshot.current) { skipSnapshot.current = false; setLoaded(true); setSincronizado(true); return; }
         if (snap.exists()) {
           const snapData = snap.data();
           const d = snapData.equipo;
           if (d && Array.isArray(d)) {
-            // Merge HISTORIAL_EXCEL for any months not already in Firebase data
             var merged = d.map(function(v) {
               var excelHist = HISTORIAL_EXCEL[v.id] || HISTORIAL_EXCEL[String(v.id)] || {};
               var currentHist = v.historial || {};
@@ -2743,6 +2778,8 @@ function SupervisorFotoCard() {
             console.log("[LOAD] Firebase datos recibidos OK");
             merged = merged.map(function(x){ return Object.assign({rep:[]}, x); });
             setEquipo(merged);
+            // Cargar historial de meses anteriores en segundo plano
+            setTimeout(function(){ cargarHistorialMesesAnteriores(merged); }, 800);
           }
           const m = snapData.metaEquipo;
           if (m && typeof m === "number") setMetaEquipo(m);
@@ -2765,7 +2802,6 @@ function SupervisorFotoCard() {
           setLoaded(true);
         });
       });
-      // Timeout: solo actua si Firebase NO respondio en 12 segundos
       var fbTimeout = setTimeout(function() {
         if (!fbRespondio) {
           console.warn("[LOAD] Firebase timeout — sin respuesta en 12s");
@@ -5712,115 +5748,68 @@ function UFLinealesView({ equipo, info }) {
 
   function buildMesKey(offset) {
     var d = new Date();
+    d.setDate(1);
     d.setMonth(d.getMonth() - offset);
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
   }
   function buildMesLabel(offset) {
     var d = new Date();
+    d.setDate(1);
     d.setMonth(d.getMonth() - offset);
     return d.toLocaleString("es-CL", { month: "long", year: "numeric" });
   }
 
-  // Load last 6 months from storage (each month is a separate Firebase doc)
-  var [mesesData, setMesesData] = useState([]);
-  var [cargando, setCargando] = useState(true);
+  // ── Misma fuente de datos que ExcelDataView ──
+  // Para cada ejecutivo y mes: usa historial Firebase/manual, fallback a HISTORIAL_EXCEL
+  function getUFMes(v, mk) {
+    if (mk === info.mesKey) return v.uf || 0; // mes actual: dato en vivo
+    var manualEdit = (v.historial || {})[mk] || {};
+    var excelBase  = (HISTORIAL_EXCEL[v.id] || HISTORIAL_EXCEL[String(v.id)] || {})[mk] || {};
+    var d = Object.keys(manualEdit).length > 0 ? manualEdit : excelBase;
+    return d.uf || 0;
+  }
 
-  useEffect(function() {
-    var offsets = [1, 2, 3, 4, 5, 6];
-
-    function calcDesdeArray(arr, mk) {
-      var tot = 0, cal = [];
-      arr.forEach(function(vMes) {
-        var vA = equipo.find(function(e){ return String(e.id)===String(vMes.id); });
-        if (!vA) return;
-        var uf = vMes.uf || 0;
-        if (uf >= 12) { tot += uf; cal.push({ id: vMes.id, nombre: vA.nombre, uf: uf }); }
-      });
-      cal.sort(function(a,b){ return b.uf-a.uf; });
-      return { total: tot, calificados: cal };
-    }
-
-    function calcDesdeHistorial(mk) {
-      var tot = 0, cal = [];
-      equipo.forEach(function(v) {
-        var fbH = (v.historial||{})[mk] || {};
-        var exH = (HISTORIAL_EXCEL[v.id]||HISTORIAL_EXCEL[String(v.id)]||{})[mk] || {};
-        var uf = (typeof fbH.uf==="number" && fbH.uf>0) ? fbH.uf : (exH.uf||0);
-        if (uf >= 12) { tot += uf; cal.push({ id: v.id, nombre: v.nombre, uf: uf }); }
-      });
-      cal.sort(function(a,b){ return b.uf-a.uf; });
-      return { total: tot, calificados: cal };
-    }
-
-    var promises = offsets.map(function(offset) {
-      var mk = buildMesKey(offset);
-      var label = buildMesLabel(offset);
-
-      // Intentar leer desde Firebase directamente (cubre meses sin HISTORIAL_EXCEL como Abril 2026)
-      if (window.__fbDb && window.__fbDoc && window.__fbGetDoc) {
-        var ref = window.__fbDoc(window.__fbDb, "equipos", mk);
-        return window.__fbGetDoc(ref).then(function(snap) {
-          if (snap.exists) {
-            var d = snap.data();
-            if (d && d.equipo && Array.isArray(d.equipo)) {
-              var r = calcDesdeArray(d.equipo, mk);
-              return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-            }
-          }
-          // Sin datos en Firebase — fallback historial/Excel
-          var r = calcDesdeHistorial(mk);
-          return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-        }).catch(function() {
-          var r = calcDesdeHistorial(mk);
-          return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-        });
-      }
-      // Sin Firebase disponible — storage local o historial
-      return storageGet("equipo_" + mk).then(function(data) {
-        if (data && Array.isArray(data)) {
-          var r = calcDesdeArray(data, mk);
-          return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-        }
-        var r = calcDesdeHistorial(mk);
-        return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-      }).catch(function() {
-        var r = calcDesdeHistorial(mk);
-        return { mk: mk, label: label, total: r.total, calificados: r.calificados };
-      });
+  function calcMes(mk) {
+    var tot = 0, cal = [];
+    equipo.forEach(function(v) {
+      var uf = getUFMes(v, mk);
+      if (uf >= 12) { tot += uf; cal.push({ id: v.id, nombre: v.nombre, uf: uf }); }
     });
+    cal.sort(function(a, b) { return b.uf - a.uf; });
+    return { total: tot, calificados: cal };
+  }
 
-    Promise.all(promises).then(function(meses) {
-      setMesesData(meses);
-      setCargando(false);
-    });
-  }, []);
+  // Generar los 6 meses anteriores — sin llamadas async, sin estados de carga
+  var mesesData = [];
+  for (var i = 1; i <= 6; i++) {
+    var mk = buildMesKey(i);
+    var r  = calcMes(mk);
+    mesesData.push({ mk: mk, label: buildMesLabel(i), total: r.total, calificados: r.calificados });
+  }
 
-  // Mes actual: usar equipo en tiempo real
-  var totalMesActual = equipo.reduce(function(sum, v) {
-    return sum + (v.uf >= 12 ? v.uf : 0);
-  }, 0);
-  var calificadosMesActual = equipo
-    .filter(function(v) { return v.uf >= 12; })
-    .sort(function(a, b) { return b.uf - a.uf; });
+  // Mes actual: datos en vivo del equipo
+  var totalMesActual = equipo.reduce(function(sum, v) { return sum + (v.uf >= 12 ? v.uf : 0); }, 0);
+  var calificadosMesActual = equipo.filter(function(v){ return v.uf >= 12; }).sort(function(a,b){ return b.uf-a.uf; });
 
   function fmtUF2(n) {
     var t = Math.floor(n * 100) / 100;
-    var f = parseFloat(t.toFixed(2));
-    return f.toString().replace(".", ",");
+    return parseFloat(t.toFixed(2)).toString().replace(".", ",");
   }
   function primerNombreApellido(nombre) {
     var p = nombre.trim().split(/\s+/);
-    if (p.length >= 2) return p[0] + " " + p[1];
-    return p[0];
+    return p.length >= 2 ? p[0] + " " + p[1] : p[0];
   }
 
   return React.createElement('div', { style: { padding: "4px 0" } },
     React.createElement('div', { style: { fontSize: 18, fontWeight: 900, color: RD, marginBottom: 4 } }, "📈 UF's Lineales"),
-    React.createElement('div', { style: { color: "#6B7280", fontSize: 13, marginBottom: 22 } },
+    React.createElement('div', { style: { color: "#6B7280", fontSize: 13, marginBottom: 6 } },
       "Suma mensual de UF solo de ejecutivos que alcanzaron ≥ 12 UF en cada mes."
     ),
+    React.createElement('div', { style: { fontSize: 11, color: "#9CA3AF", marginBottom: 22, fontStyle: "italic" } },
+      "💡 El historial se carga automáticamente desde Firebase al abrir el dashboard."
+    ),
 
-    // Recuadro principal: MES ACTUAL (tiempo real)
+    // Mes actual (tiempo real)
     React.createElement('div', {
       style: { background: "linear-gradient(135deg,#C41230,#8B0418)", borderRadius: 20, padding: "28px 32px", marginBottom: 24, color: "#fff", boxShadow: "0 8px 32px rgba(196,18,48,.35)" }
     },
@@ -5841,29 +5830,29 @@ function UFLinealesView({ equipo, info }) {
       )
     ),
 
-    // Ultimos 6 meses
-    cargando
-      ? React.createElement('div', { style: { color: "#9CA3AF", fontSize: 14, padding: 20, textAlign: "center" } }, "Cargando historial...")
-      : React.createElement('div', { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 } },
-          mesesData.map(function(mes) {
-            return React.createElement('div', { key: mes.mk, style: { background: "#fff", borderRadius: 16, padding: "20px 22px", boxShadow: "0 3px 16px rgba(233,7,41,.07)", border: "1px solid rgba(233,7,41,.1)" } },
-              React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 } }, mes.label),
-              React.createElement('div', { style: { fontSize: 12, color: "#6B7280", marginBottom: 10 } }, "Total UF's Lineales"),
-              React.createElement('div', { style: { fontSize: 32, fontWeight: 900, color: RD, marginBottom: 10 } }, fmtUF2(mes.total) + " UF"),
-              React.createElement('div', { style: { fontSize: 11, color: "#9CA3AF", marginBottom: mes.calificados.length > 0 ? 8 : 0 } },
-                mes.calificados.length + " ejecutivo(s) con ≥ 12 UF"
-              ),
-              mes.calificados.length > 0 && React.createElement('div', { style: { display: "flex", flexDirection: "column", gap: 4 } },
-                mes.calificados.map(function(v) {
-                  return React.createElement('div', { key: v.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                    React.createElement('span', { style: { fontWeight: 700, color: "#374151" } }, primerNombreApellido(v.nombre)),
-                    React.createElement('span', { style: { color: RD, fontWeight: 700 } }, fmtUF2(v.uf) + " UF")
-                  );
-                })
-              )
-            );
-          })
-        )
+    // 6 meses anteriores — sincrónico, sin loading
+    React.createElement('div', { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 } },
+      mesesData.map(function(mes) {
+        return React.createElement('div', { key: mes.mk, style: { background: "#fff", borderRadius: 16, padding: "20px 22px", boxShadow: "0 3px 16px rgba(233,7,41,.07)", border: "1px solid rgba(233,7,41,.1)" } },
+          React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 } }, mes.label),
+          React.createElement('div', { style: { fontSize: 12, color: "#6B7280", marginBottom: 10 } }, "Total UF's Lineales"),
+          React.createElement('div', { style: { fontSize: 32, fontWeight: 900, color: mes.total > 0 ? RD : "#D1D5DB", marginBottom: 10 } }, fmtUF2(mes.total) + " UF"),
+          React.createElement('div', { style: { fontSize: 11, color: "#9CA3AF", marginBottom: mes.calificados.length > 0 ? 8 : 0 } },
+            mes.total > 0
+              ? mes.calificados.length + " ejecutivo(s) con ≥ 12 UF"
+              : "Sin datos registrados ese mes"
+          ),
+          mes.calificados.length > 0 && React.createElement('div', { style: { display: "flex", flexDirection: "column", gap: 4 } },
+            mes.calificados.map(function(v) {
+              return React.createElement('div', { key: v.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
+                React.createElement('span', { style: { fontWeight: 700, color: "#374151" } }, primerNombreApellido(v.nombre)),
+                React.createElement('span', { style: { color: RD, fontWeight: 700 } }, fmtUF2(v.uf) + " UF")
+              );
+            })
+          )
+        );
+      })
+    )
   );
 }
 
