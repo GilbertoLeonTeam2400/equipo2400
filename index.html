@@ -6497,7 +6497,42 @@ function ExcelDataView({ equipo, setEquipo, info }) {
     });
     setEquipo(newEquipo);
     if (window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
-      window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:newEquipo});
+      if (mesKey === info.mesKey) {
+        // Mes actual: guardar todo el equipo
+        window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",mesKey),{equipo:newEquipo});
+      } else {
+        // Mes anterior: leer doc existente y actualizar solo ese ejecutivo
+        window.__fbGetDoc(window.__fbDoc(window.__fbDb,"equipos",mesKey)).then(function(snap) {
+          var equipoDoc;
+          if (snap.exists) {
+            var d = snap.data();
+            var encontrado = false;
+            equipoDoc = (d.equipo||[]).map(function(vOld) {
+              if (String(vOld.id)!==String(execId)) return vOld;
+              encontrado = true;
+              var histOld = Object.assign({}, vOld.historial||{});
+              var mesData = Object.assign({}, histOld[mesKey]||{});
+              mesData[field] = newVal;
+              histOld[mesKey] = mesData;
+              var updated = Object.assign({}, vOld, {historial:histOld});
+              if (field==="uf") updated.uf = newVal;
+              if (field==="dps") updated.dps = newVal;
+              return updated;
+            });
+            if (!encontrado) {
+              // Ejecutivo no estaba en el doc antiguo: agregar
+              var vActual = newEquipo.find(function(v){return String(v.id)===String(execId);});
+              if (vActual) equipoDoc.push(Object.assign({}, vActual, {rep:[]}));
+            }
+          } else {
+            // Doc no existe: crear con todos los ejecutivos
+            equipoDoc = newEquipo.map(function(v){return Object.assign({},v,{uf:0,dps:0,rep:[]});});
+            var vEdit = equipoDoc.find(function(v){return String(v.id)===String(execId);});
+            if(vEdit){ vEdit[field]=newVal; if(field==="uf")vEdit.uf=newVal; if(field==="dps")vEdit.dps=newVal; }
+          }
+          return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",mesKey),{equipo:equipoDoc});
+        }).catch(function(e){console.warn("[saveEdit] Error:",e);});
+      }
     }
     setSaved(true); setEditing(null);
     setTimeout(function(){setSaved(false);},2000);
@@ -6562,8 +6597,59 @@ function ExcelDataView({ equipo, setEquipo, info }) {
           });
         });
         setEquipo(nuevoEquipo);
-        if (window.__fbDb && window.__fbDoc && window.__fbSetDoc) {
-          window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:nuevoEquipo});
+
+        // Guardar historial en Firebase — cada mes va a SU PROPIO documento
+        // Los datos del mes actual van a equipos/{mesActual}
+        // Los datos de meses anteriores van a equipos/{mesAnterior} preservando lo que ya había
+        if (window.__fbDb && window.__fbDoc && window.__fbSetDoc && window.__fbGetDoc) {
+          // Agrupar cambios por mesKey
+          var cambiosPorMes = {};
+          nuevoEquipo.forEach(function(v) {
+            var hist = v.historial || {};
+            Object.keys(hist).forEach(function(mk) {
+              if (!cambiosPorMes[mk]) cambiosPorMes[mk] = {};
+              cambiosPorMes[mk][String(v.id)] = hist[mk];
+            });
+          });
+
+          Object.keys(cambiosPorMes).forEach(function(mk) {
+            var docId = mk; // e.g. "2026-04"
+            if (mk === info.mesKey) {
+              // Mes actual: guardar equipo completo
+              window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",docId), {equipo:nuevoEquipo})
+                .catch(function(e){console.warn("[Excel] Error guardando mes actual:",e);});
+            } else {
+              // Mes anterior: leer doc existente y actualizar solo el historial
+              window.__fbGetDoc(window.__fbDoc(window.__fbDb,"equipos",docId)).then(function(snap) {
+                var equipoMesAnterior;
+                if (snap.exists) {
+                  var d = snap.data();
+                  equipoMesAnterior = (d.equipo || []).map(function(vOld) {
+                    var histNuevo = cambiosPorMes[mk][String(vOld.id)];
+                    if (!histNuevo) return vOld;
+                    return Object.assign({}, vOld, {
+                      uf: histNuevo.uf || vOld.uf || 0,
+                      dps: histNuevo.dps || vOld.dps || 0,
+                      historial: Object.assign({}, vOld.historial||{}, {[mk]: histNuevo})
+                    });
+                  });
+                  // Si algún ejecutivo del equipo actual no estaba en el doc antiguo, no lo agregamos
+                } else {
+                  // Doc no existe: crear con el equipo actual + datos del mes
+                  equipoMesAnterior = nuevoEquipo.map(function(v) {
+                    var histMes = cambiosPorMes[mk][String(v.id)] || {};
+                    return Object.assign({}, v, {
+                      uf: histMes.uf || 0,
+                      dps: histMes.dps || 0,
+                      rep: [],
+                      historial: {[mk]: histMes}
+                    });
+                  });
+                }
+                return window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",docId), {equipo: equipoMesAnterior});
+              }).catch(function(e){console.warn("[Excel] Error guardando mes anterior "+mk+":",e);});
+            }
+          });
         }
         setExcelOk(true);
         setExcelMsg("✅ Cargado correctamente. " + cambios + " registros actualizados. Verifica los datos en la tabla.");
