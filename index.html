@@ -2935,7 +2935,7 @@ function SupervisorFotoCard() {
   const [bulkOk,   setBulkOk]   = useState(false);
   const [nuevoNom, setNuevoNom] = useState("");
   // Reporte
-  const [form,     setForm]     = useState({ vid:"", contactos:"", cot:"", dps:"", dpsVenta:"0", nota:"" });
+  const [form,     setForm]     = useState({ vid:"", contactos:"", cot:"", dps:"0", dpsVenta:"0", nota:"" });
   const [cierresHoy,    setCierresHoy]    = useState([]);
   const [recoNombre,    setRecoNombre]    = useState("");
   const [premioConecta, setPremioConecta] = useState(100000); // Monto por plan Conecta (editable en supervisor)
@@ -3686,43 +3686,46 @@ function SupervisorFotoCard() {
                   )
                 )
               )
-              /* TOP 5 DEL MES */
+              /* TOP 10 DEL MES — Reconocimiento */
               , (function(){
-                var top5sorted = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5);
-                if (top5sorted.length === 0) return null;
-                var medalColors = ["#FFD700","#C0C0C0","#CD7F32","#C9A84C","#C9A84C"];
-                var medalEmojis = ["🥇","🥈","🥉","4️⃣","5️⃣"];
+                var top10sorted = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,10);
+                if (top10sorted.length === 0) return null;
+                var medalEmojis = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
+                var medalColors = ["#FFD700","#C0C0C0","#CD7F32","#C9A84C","#C9A84C","#C9A84C","#C9A84C","#C9A84C","#C9A84C","#C9A84C"];
+                // Dividir en dos columnas de 5
+                var col1 = top10sorted.slice(0,5);
+                var col2 = top10sorted.slice(5,10);
+                function renderFila(v, i, offset) {
+                  var pos = i + offset;
+                  var initials = v.nombre ? v.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                  var primerNombre = v.nombre.split(' ')[0];
+                  var segundoNombre = v.nombre.split(' ')[1] || '';
+                  return React.createElement('div', { key: v.id, style: {display:"flex",alignItems:"center",gap:8,background:pos===0?"rgba(255,215,0,.08)":"rgba(255,255,255,.04)",borderRadius:10,padding:"8px 10px",border:pos===0?"1px solid rgba(255,215,0,.2)":"1px solid rgba(255,255,255,.05)"} }
+                    , React.createElement('div', { style: {fontSize:pos===0?18:13,minWidth:22,textAlign:"center",flexShrink:0} }, medalEmojis[pos])
+                    , React.createElement('div', { style: {width:30,height:30,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid "+(medalColors[pos]||"#C9A84C"),background:v.fotoUrl?"#000":"rgba(201,168,76,.15)",display:"flex",alignItems:"center",justifyContent:"center"} }
+                      , v.fotoUrl
+                        ? React.createElement('img', { src: v.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: v.nombre })
+                        : React.createElement('span', { style: {fontSize:11,fontWeight:900,color:medalColors[pos]||"#C9A84C"} }, initials)
+                    )
+                    , React.createElement('div', { style: {flex:1,minWidth:0} }
+                      , React.createElement('div', { style: {fontSize:11,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.2} }, primerNombre)
+                      , segundoNombre && React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.5)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"} }, segundoNombre)
+                    )
+                  );
+                }
                 return React.createElement('div', { style: {margin:"0 0 16px",background:"linear-gradient(135deg,#1a0a00,#2a1500,#1a0a00)",borderRadius:18,padding:"18px 20px",border:"2px solid rgba(201,168,76,.35)",boxShadow:"0 4px 24px rgba(201,168,76,.15)"} }
                   , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,marginBottom:14} }
                     , React.createElement('div', { style: {fontSize:18} }, "🏆")
-                    , React.createElement('div', { style: {fontSize:13,fontWeight:900,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.12em"} }, "TOP 5 del mes")
+                    , React.createElement('div', { style: {fontSize:13,fontWeight:900,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.12em"} }, "Top 10 — Reconocimiento del mes")
                     , React.createElement('div', { style: {flex:1,height:1,background:"rgba(201,168,76,.25)",marginLeft:8} })
                   )
-                  , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:8} }
-                    , top5sorted.map(function(v,i){
-                      var pctMeta = v.metaUF>0 ? Math.min(Math.round((v.uf/v.metaUF)*100),100) : 0;
-                      var initials = v.nombre ? v.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
-                      return React.createElement('div', { key: v.id, style: {display:"flex",alignItems:"center",gap:10,background:i===0?"rgba(255,215,0,.08)":"rgba(255,255,255,.04)",borderRadius:12,padding:"10px 12px",border:i===0?"1px solid rgba(255,215,0,.25)":"1px solid rgba(255,255,255,.06)"} }
-                        , React.createElement('div', { style: {fontSize:i===0?22:16,minWidth:28,textAlign:"center"} }, medalEmojis[i])
-                        , React.createElement('div', { style: {width:34,height:34,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid "+(medalColors[i]||"#C9A84C"),background:v.fotoUrl?"#000":"rgba(201,168,76,.15)",display:"flex",alignItems:"center",justifyContent:"center"} }
-                          , v.fotoUrl
-                            ? React.createElement('img', { src: v.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: v.nombre })
-                            : React.createElement('span', { style: {fontSize:12,fontWeight:900,color:medalColors[i]||"#C9A84C"} }, initials)
-                        )
-                        , React.createElement('div', { style: {flex:1,minWidth:0} }
-                          , React.createElement('div', { style: {fontSize:12,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"} }
-                            , v.nombre.split(' ')[0]+" "+(v.nombre.split(' ')[1]||"")
-                          )
-                          , React.createElement('div', { style: {marginTop:4,background:"rgba(255,255,255,.1)",borderRadius:99,height:4,overflow:"hidden"} }
-                            , React.createElement('div', { style: {width:pctMeta+"%",height:"100%",borderRadius:99,background:"linear-gradient(90deg,"+(medalColors[i]||"#C9A84C")+",rgba(255,255,255,.5))",transition:"width .8s ease"} })
-                          )
-                        )
-                        , React.createElement('div', { style: {textAlign:"right",flexShrink:0} }
-                          , React.createElement('div', { style: {fontSize:15,fontWeight:900,color:medalColors[i]||"#C9A84C"} }, fmtUF2(v.uf)+" UF")
-                          , React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.45)",marginTop:1} }, pctMeta+"% meta")
-                        )
-                      );
-                    })
+                  , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:8} }
+                    , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:6} }
+                      , col1.map(function(v,i){ return renderFila(v,i,0); })
+                    )
+                    , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:6} }
+                      , col2.map(function(v,i){ return renderFila(v,i,5); })
+                    )
                   )
                 );
               })()
@@ -3779,6 +3782,40 @@ function SupervisorFotoCard() {
               }
 
               return React.createElement('div', { style: {width:"100%",boxSizing:"border-box",overflow:"hidden"} },
+                // 3. CUMPLEAÑEROS — va ANTES de las fotos del equipo
+                React.createElement('div', { style: {background: cumpleMes.length>0 ? "linear-gradient(135deg,#0a0a0a,#1a1a0a,#2a2000)" : "#F8FAFC", borderRadius:16, padding:"20px 24px", border: cumpleMes.length>0 ? "2px solid #C9A84C" : "1px solid #E5E7EB", boxShadow: cumpleMes.length>0 ? "0 4px 32px rgba(201,168,76,.35)" : "none", marginBottom:16} },
+                  cumpleMes.length > 0
+                    ? React.createElement('div', { style: {textAlign:"center"} },
+                        React.createElement('div', { style: {fontSize:32,marginBottom:8} }, "🎂🎉🎊"),
+                        React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"rgba(201,168,76,.9)",marginBottom:8,letterSpacing:"0.02em",lineHeight:1.5} },
+                          "Este mes celebramos la vida de "+(cumpleMes.length===1?"un CRACK":"estos CRACKS")+" del TEAM!"
+                        ),
+                        React.createElement('div', { style: {fontSize:cumpleMes.length===1?"22px":"18px",fontWeight:900,color:"#FCD34D",marginBottom:16,letterSpacing:"0.04em",textTransform:"uppercase",textShadow:"0 2px 12px rgba(201,168,76,.6), 0 0 30px rgba(201,168,76,.3)"} },
+                          "🌟 ¡Feliz Cumpleaños!! 🌟"
+                        ),
+                        React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap",marginBottom:12} },
+                          cumpleMes.map(function(c,ci){
+                            var initials = c.nombre ? c.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                            return React.createElement('div', { key: ci, style: {textAlign:"center"} },
+                              React.createElement('div', { style: {width:72,height:72,borderRadius:"50%",border:"3px solid #C9A84C",overflow:"hidden",background:c.fotoUrl?"#000":"#1a1500",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",boxShadow:"0 0 0 4px rgba(201,168,76,.25), 0 0 20px rgba(201,168,76,.2)"} },
+                                c.fotoUrl
+                                  ? React.createElement('img', { src: c.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"} })
+                                  : React.createElement('span', { style: {fontSize:24,fontWeight:900,color:"#C9A84C"} }, initials)
+                              ),
+                              React.createElement('div', { style: {fontSize:11,fontWeight:900,color:"#FCD34D",maxWidth:80} }, c.nombre)
+                            );
+                          })
+                        ),
+                        React.createElement('div', { style: {fontSize:13,color:"rgba(201,168,76,.75)"} }, "¡El equipo 2400 los celebra este mes! 🥳")
+                      )
+                    : React.createElement('div', { style: {textAlign:"center",padding:"10px 0"} },
+                        React.createElement('div', { style: {fontSize:28,marginBottom:6} }, "🎂"),
+                        React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:4} }, "Cumpleañeros del mes"),
+                        React.createElement('div', { style: {fontSize:12,color:"#9CA3AF"} }, "Sin cumpleañeros este mes — ¡el próximo llegará pronto!")
+                      )
+                ),
+
+                // HEADER del grupo
                 React.createElement('div', { style: {background:"linear-gradient(135deg,#C41230,#8B0000)",borderRadius:16,padding:"16px 12px",marginBottom:12,boxShadow:"0 4px 20px rgba(196,18,48,.25)",textAlign:"center"} },
                   React.createElement('div', { style: {fontSize:"clamp(11px,3.2vw,18px)",fontWeight:900,color:"#FCD34D",letterSpacing:"0.02em",textTransform:"uppercase",lineHeight:1.3} }, "⭐ ESTOS SOMOS LOS CRAKS QUE CONFORMAMOS EL TEAM CONDOR 2400 ⭐"),
                   React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.75)",marginTop:6} }, "Banmédica")
@@ -3814,36 +3851,16 @@ function SupervisorFotoCard() {
                   })
                 ),
 
-                React.createElement('div', { style: {background: cumpleMes.length>0 ? "linear-gradient(135deg,#0a0a0a,#1a1a0a,#2a2000)" : "#F8FAFC", borderRadius:16, padding:"20px 24px", border: cumpleMes.length>0 ? "2px solid #C9A84C" : "1px solid #E5E7EB", boxShadow: cumpleMes.length>0 ? "0 4px 32px rgba(201,168,76,.35)" : "none"} },
-                  cumpleMes.length > 0
-                    ? React.createElement('div', { style: {textAlign:"center"} },
-                        React.createElement('div', { style: {fontSize:32,marginBottom:8} }, "🎂🎉🎊"),
-                        React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"rgba(201,168,76,.9)",marginBottom:8,letterSpacing:"0.02em",lineHeight:1.5} },
-                          "Este mes celebramos la vida de "+(cumpleMes.length===1?"un CRACK":"estos CRACKS")+" del TEAM!"
-                        ),
-                        React.createElement('div', { style: {fontSize:cumpleMes.length===1?"22px":"18px",fontWeight:900,color:"#FCD34D",marginBottom:16,letterSpacing:"0.04em",textTransform:"uppercase",textShadow:"0 2px 12px rgba(201,168,76,.6), 0 0 30px rgba(201,168,76,.3)"} },
-                          "🌟 ¡Feliz Cumpleaños!! 🌟"
-                        ),
-                        React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap",marginBottom:12} },
-                          cumpleMes.map(function(c,ci){
-                            var initials = c.nombre ? c.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
-                            return React.createElement('div', { key: ci, style: {textAlign:"center"} },
-                              React.createElement('div', { style: {width:72,height:72,borderRadius:"50%",border:"3px solid #C9A84C",overflow:"hidden",background:c.fotoUrl?"#000":"#1a1500",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",boxShadow:"0 0 0 4px rgba(201,168,76,.25), 0 0 20px rgba(201,168,76,.2)"} },
-                                c.fotoUrl
-                                  ? React.createElement('img', { src: c.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"} })
-                                  : React.createElement('span', { style: {fontSize:24,fontWeight:900,color:"#C9A84C"} }, initials)
-                              ),
-                              React.createElement('div', { style: {fontSize:11,fontWeight:900,color:"#FCD34D",maxWidth:80} }, c.nombre)
-                            );
-                          })
-                        ),
-                        React.createElement('div', { style: {fontSize:13,color:"rgba(201,168,76,.75)"} }, "¡El equipo 2400 los celebra este mes! 🥳")
-                      )
-                    : React.createElement('div', { style: {textAlign:"center",padding:"10px 0"} },
-                        React.createElement('div', { style: {fontSize:28,marginBottom:6} }, "🎂"),
-                        React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:4} }, "Cumpleañeros del mes"),
-                        React.createElement('div', { style: {fontSize:12,color:"#9CA3AF"} }, "Sin cumpleañeros este mes — ¡el próximo llegará pronto!")
-                      )
+                // 4. LOGO CÓNDOR — cierre de página
+                React.createElement('div', { style: {textAlign:"center",padding:"28px 0 12px",opacity:.85} }
+                  , React.createElement('img', { src: "https://gilbertoleonteam2400.github.io/equipo2400/CONDOR_LOGO.png", alt: "Team Cóndor 2400",
+                      style: {width:"clamp(140px,55vw,260px)",height:"auto",filter:"drop-shadow(0 4px 18px rgba(201,168,76,.35))",display:"block",margin:"0 auto"},
+                      onError: function(e){
+                        // fallback: usar el CONDOR_B64 si el PNG no carga
+                        e.target.src = "data:image/png;base64,"+CONDOR_B64.join("");
+                      }
+                    })
+                  , React.createElement('div', { style: {fontSize:11,color:"rgba(201,168,76,.6)",fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",marginTop:10} }, "Team Cóndor 2400")
                 )
               );
             })()
@@ -3875,11 +3892,11 @@ function SupervisorFotoCard() {
                   )
                   , React.createElement('div', { style: {display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"} }
                     , React.createElement('button', {
-                        onClick: function(){setEnviado(false);setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
+                        onClick: function(){setEnviado(false);setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"0",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
                         style: {padding:"12px 24px",border:"1.5px solid #E5E7EB",borderRadius:12,background:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:14,color:"#374151"}
                       }, "Nuevo reporte")
                     , React.createElement('button', {
-                        onClick: function(){setEnviado(false);setPinFormOk(false);setPinFormulario("");setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
+                        onClick: function(){setEnviado(false);setPinFormOk(false);setPinFormulario("");setForm({vid:"",contactos:"",cot:"",cierres:"",uf:"",dps:"0",nota:"",hombres:"0",mujeres:"0",conecta:"0"});},
                         style: Object.assign({},BTN,{padding:"12px 24px",fontSize:14,background:"#C41230"})
                       }, "🔒 Cerrar sesion")
                   )
@@ -3948,10 +3965,10 @@ function SupervisorFotoCard() {
                       , React.createElement('input', { type: "number", min: "0", value: form.cot, onChange: function(e){setForm(Object.assign({},form,{cot:e.target.value}));}, onFocus: function(e){if(e.target.value==="0")setForm(Object.assign({},form,{cot:""}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3251}} )
                     )
 
-                    , React.createElement('div', { style: {background:"#F0FDF4",borderRadius:12,padding:"12px 14px"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3254}}
-                      , React.createElement('label', { style: Object.assign({},LBL,{color:"#16A34A",fontSize:11,marginBottom:4}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3255}}, "💚 DPS realizadas hoy"   )
-                      , React.createElement('input', { type: "number", min: "0", value: form.dps, onChange: function(e){setForm(Object.assign({},form,{dps:e.target.value}));}, style: Object.assign({},INP), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3256}} )
-                      , React.createElement('div', { style: {fontSize:10,color:"#16A34A",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3257}}, "Total DPS tomadas hoy"   )
+                    , React.createElement('div', { style: {background:"#F0FDF4",borderRadius:12,padding:"12px 14px",border:"2px solid rgba(22,163,74,.25)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3254}}
+                      , React.createElement('label', { style: Object.assign({},LBL,{color:"#16A34A",fontSize:11,marginBottom:4}), __self: this, __source: {fileName: _jsxFileName, lineNumber: 3255}}, "💚 DPS realizadas hoy *"   )
+                      , React.createElement('input', { type: "number", min: "0", value: form.dps, onChange: function(e){setForm(Object.assign({},form,{dps:e.target.value}));}, onFocus: function(e){if(e.target.value==="0")setForm(Object.assign({},form,{dps:""}));}, onBlur: function(e){if(e.target.value===""||e.target.value==="0")setForm(Object.assign({},form,{dps:"0"}));}, style: Object.assign({},INP,{fontWeight:900,fontSize:22,color:"#16A34A"}), placeholder: "0", __self: this, __source: {fileName: _jsxFileName, lineNumber: 3256}} )
+                      , React.createElement('div', { style: {fontSize:10,color:"#16A34A",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3257}}, "Número de DPS tomadas hoy — campo obligatorio"   )
                     )
 
 
@@ -4187,7 +4204,7 @@ function SupervisorFotoCard() {
                         );
                       })()
                       /* Top5 del año */
-                      , React.createElement(Top5Badge, { nombre: histV.nombre, hallMeses: HALL_MESES })
+                      , React.createElement(Top5Badge, { nombre: histV.nombre, hallMeses: HALL_MESES, histV: histV })
                     )
                     , React.createElement(ProdEditableInner, { v: histV, equipo: equipo, setEquipo: setEquipo, guardarProductividad: guardarProductividad, guardandoProd: guardandoProd, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3495}} )
                   )
@@ -5497,22 +5514,31 @@ function nombreCoincide(a, b) {
   var na = normalizarNombre(a);
   var nb = normalizarNombre(b);
   if (na === nb) return true;
-  // Compara todas las palabras: si comparten al menos 2 palabras únicas de 4+ letras
   var pa = na.split(" ").filter(function(w){ return w.length >= 4; });
   var pb = nb.split(" ").filter(function(w){ return w.length >= 4; });
   var coincidencias = pa.filter(function(w){ return pb.indexOf(w) >= 0; }).length;
-  return coincidencias >= 2;
+  // Si el nombre más corto tiene solo 2 palabras largas (ej "MARCELA MERINO"),
+  // necesita que AMBAS coincidan (100%). Si tiene 3+ palabras necesita 3 coincidencias.
+  var minPalabras = Math.min(pa.length, pb.length);
+  var minCoincidencias = minPalabras <= 2 ? minPalabras : 3;
+  return coincidencias >= minCoincidencias;
 }
 
-function Top5Badge({ nombre, hallMeses }) {
+function Top5Badge({ nombre, hallMeses, histV }) {
   const HALL = hallMeses || window.HALL_MESES || [];
+
+  // Si el ejecutivo no tiene historial de ventas en ningún mes, es nuevo -> siempre 0
+  const tieneHistorial = histV && (
+    histV.uf > 0 ||
+    Object.values(histV.historial || {}).some(function(h){ return (h.uf||0) > 0; })
+  );
 
   // Últimos 6 meses cerrados (los que están en HALL_MESES)
   const ultimos6 = HALL.slice(-6);
   const mesesCerrados = ultimos6.length;
 
-  // Contar veces en TOP5 usando matching robusto
-  const veces = ultimos6.filter(function(m){
+  // Si es ejecutivo nuevo sin historial, mostrar 0 directamente sin buscar en HALL
+  const veces = !tieneHistorial ? 0 : ultimos6.filter(function(m){
     return m.top && m.top.slice(0,5).some(function(t){
       return nombreCoincide(t.nombre, nombre);
     });
@@ -6147,13 +6173,13 @@ function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy, crmData, TOD
           , React.createElement('label', { style: {fontSize:11,fontWeight:600,color:"#0369A1",display:"block",marginBottom:4}}, "¿De cuál Isapre viene? *" )
           , React.createElement('select', { value: nc.isapre, onChange: function(e){setNc(Object.assign({},nc,{isapre:e.target.value}));}, style: Object.assign({},INP,{borderColor:"#0369A1"})}
             , React.createElement('option', { value: ""}, "— Selecciona la Isapre —" )
-            , React.createElement('option', { value: "banmedica-carga"}, "🔵 Banmédica Carga" )
-            , React.createElement('option', { value: "colmena"}, "🟢 Colmena" )
-            , React.createElement('option', { value: "consalud"}, "🟡 Consalud" )
-            , React.createElement('option', { value: "vida-tres"}, "🟠 Vida Tres" )
-            , React.createElement('option', { value: "nueva-masvida"}, "🔴 Nueva Masvida" )
-            , React.createElement('option', { value: "cruz-blanca"}, "⚪ Cruz Blanca" )
-            , React.createElement('option', { value: "esencial"}, "🟣 Esencial" )
+            , React.createElement('option', { value: "banmedica-carga"}, "Banmédica Carga" )
+            , React.createElement('option', { value: "colmena"}, "Colmena" )
+            , React.createElement('option', { value: "consalud"}, "Consalud" )
+            , React.createElement('option', { value: "vida-tres"}, "Vida Tres" )
+            , React.createElement('option', { value: "nueva-masvida"}, "Nueva Masvida" )
+            , React.createElement('option', { value: "cruz-blanca"}, "Cruz Blanca" )
+            , React.createElement('option', { value: "esencial"}, "Esencial" )
           )
         )
         , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,paddingTop:24}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4496}}
