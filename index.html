@@ -2792,7 +2792,13 @@ function SupervisorFotoCard() {
               return Object.assign({}, v, { historial: mergedHist });
             });
             console.log("[LOAD] Firebase datos recibidos OK");
-            merged = merged.map(function(x){ return Object.assign({rep:[]}, x); });
+            merged = merged.map(function(x){
+              return Object.assign({rep:[]}, x, {
+                uf:  parseFloat(x.uf)  || 0,
+                dps: parseInt(x.dps)   || 0,
+                metaUF: parseFloat(x.metaUF) || 25
+              });
+            });
             setEquipo(merged);
             setTimeout(cargarHistorialMesesAnteriores, 800);
           }
@@ -2998,23 +3004,24 @@ function SupervisorFotoCard() {
   const [editMes,  setEditMes]  = useState(false);
   const [draft,    setDraft]    = useState(null);
 
-  //  Computed 
-  const totUF   = equipo.reduce(function(s,v){return s+v.uf;},0);
-  const totDPS  = equipo.reduce(function(s,v){return s+v.dps;},0);
-  const falta   = Math.max(0, META_UF - totUF);
+  //  Computed — todos los reduce usan (||0) para evitar NaN si Firebase trae datos corruptos
+  const totUF   = equipo.reduce(function(s,v){return s+(parseFloat(v.uf)||0);},0);
+  const totDPS  = equipo.reduce(function(s,v){return s+(parseInt(v.dps)||0);},0);
+  const metaUFSafe = (isNaN(META_UF)||META_UF<=0) ? 550 : META_UF;
+  const falta   = Math.max(0, metaUFSafe - totUF);
   const xCrack  = equipo.length > 0 ? fmtUF2(falta/equipo.length) : "0";
-  const totHombres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.hombres||0);},0);},0);
-  const totMujeres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.mujeres||0);},0);},0);
-  const totConecta = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.conecta||0);},0);},0);
+  const totHombres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.hombres)||0);},0);},0);
+  const totMujeres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.mujeres)||0);},0);},0);
+  const totConecta = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.conecta)||0);},0);},0);
   const totTitulares = totHombres + totMujeres;
   const pctH = totTitulares > 0 ? Math.round((totHombres/totTitulares)*100) : 0;
   const pctM = totTitulares > 0 ? Math.round((totMujeres/totTitulares)*100) : 0;
-  const proyV   = function(v){return ((v.metaUF||0)/WD_MES)*info.elapsed;};
-  const proyEq  = META_UF>0 ? (META_UF/WD_MES)*info.elapsed : 0;
+  const proyV   = function(v){return ((parseFloat(v.metaUF)||0)/WD_MES)*info.elapsed;};
+  const proyEq  = metaUFSafe>0 ? (metaUFSafe/WD_MES)*info.elapsed : 0;
   const pctEq   = proyEq>0?Math.round((totUF/proyEq)*100):0;
   const TODAY   = hoyStr();
-  const ufHoy   = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+r.uf;},0);},0);
-  const dpsHoy  = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+r.dps;},0);},0);
+  const ufHoy   = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseFloat(r.uf)||0);},0);},0);
+  const dpsHoy  = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseInt(r.dps)||0);},0);},0);
   const top5    = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5).map(function(v,i){return {nombre:v.nombre,pos:i+1};});
 
   // Build last 3 months keys for historial
@@ -3260,7 +3267,7 @@ function SupervisorFotoCard() {
     var totHom       = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.hombres||0);},0);},0);
     var totMuj       = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.mujeres||0);},0);},0);
     var totCon       = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(r.conecta||0);},0);},0);
-    filas.push(["TOTAL EQUIPO",META_UF,fmtUF(totUF),Math.round((totUF/META_UF)*100)+"%",totDPS,totContactos,totCot,totCierres,
+    filas.push(["TOTAL EQUIPO",metaUFSafe,fmtUF(totUF),Math.round((totUF/metaUFSafe)*100)+"%",totDPS,totContactos,totCot,totCierres,
       totContactos>0?Math.round((totCierres/totContactos)*100)+"%":"0%",
       totCot>0?Math.round((totCierres/totCot)*100)+"%":"0%",totHom,totMuj,totCon]);
     var csv = [headers].concat(filas).map(function(r){
@@ -3447,7 +3454,7 @@ function SupervisorFotoCard() {
                 /* Título dinámico */
                 , React.createElement('div', { style: {fontSize:"clamp(20px,5.5vw,30px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3022}}
                   , (function(){
-                    var pct = META_UF>0 ? Math.round((totUF/META_UF)*100) : 0;
+                    var pct = META_UF>0 ? Math.round((totUF/metaUFSafe)*100) : 0;
                     var frase = pct>=100 ? "¡Meta cumplida! El equipo lo logró" :
                                 pct>=80  ? "El vuelo del equipo va " :
                                 pct>=60  ? "El equipo avanza " :
@@ -3464,7 +3471,7 @@ function SupervisorFotoCard() {
                 /* Frase motivacional */
                 , React.createElement('div', { style: {fontSize:12,color:"rgba(201,168,76,.75)",fontStyle:"italic",marginBottom:18}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3039}}
                   , (function(){
-                    var pct = META_UF>0 ? Math.round((totUF/META_UF)*100) : 0;
+                    var pct = META_UF>0 ? Math.round((totUF/metaUFSafe)*100) : 0;
                     return pct>=100 ? '"El cóndor voló más alto que nunca."' :
                            pct>=80  ? '"Con enfoque inquebrantable, triunfamos con propósito."' :
                            pct>=60  ? '"Cada UF es un metro de altitud ganado."' :
@@ -3479,7 +3486,7 @@ function SupervisorFotoCard() {
                     , fmtUF2(totUF)
                   )
                   , React.createElement('div', { style: {fontSize:13,color:"rgba(201,168,76,.8)",fontWeight:700,marginTop:4,letterSpacing:"0.08em"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3055}}
-                    , "de "+META_UF+" UF meta del mes"
+                    , "de "+metaUFSafe+" UF meta del mes"
                   )
                 )
                 /* Barra de progreso estilo marcador */
@@ -3488,10 +3495,10 @@ function SupervisorFotoCard() {
                     , React.createElement('span', { style: {fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3062}}, "Avance hacia la meta"   )
                   )
                   , React.createElement('div', { style: {position:"relative",height:14,background:"rgba(255,255,255,.1)",borderRadius:99,border:"1px solid rgba(255,255,255,.12)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3065}}
-                    , React.createElement('div', { style: {position:"absolute",left:0,top:0,height:"100%",width:Math.min(META_UF>0?(totUF/META_UF)*100:0,100)+"%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99,transition:"width 1s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3066}} )
-                    , proyEq>0&&React.createElement('div', { style: {position:"absolute",top:-5,bottom:-5,left:Math.min((proyEq/META_UF)*100,100)+"%",width:2,background:"rgba(255,255,255,.7)",borderRadius:99}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3067}})
-                    , React.createElement('div', { style: {position:"absolute",right:Math.max(0,100-Math.min(META_UF>0?(totUF/META_UF)*100:0,96))+"%",top:"50%",transform:"translate(50%,-50%)",background:META_UF>0&&(totUF/META_UF)*100>=100?"#4ADE80":META_UF>0&&(totUF/META_UF)*100>=60?"#C9A84C":"#FCA5A5",color:"#1a0a0a",fontWeight:900,fontSize:10,borderRadius:99,padding:"2px 6px",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(0,0,0,.4)",pointerEvents:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3068}}
-                      , META_UF>0?Math.round((totUF/META_UF)*100)+"%":"0%"
+                    , React.createElement('div', { style: {position:"absolute",left:0,top:0,height:"100%",width:Math.min(metaUFSafe>0?(totUF/metaUFSafe)*100:0,100)+"%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99,transition:"width 1s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3066}} )
+                    , proyEq>0&&React.createElement('div', { style: {position:"absolute",top:-5,bottom:-5,left:Math.min((proyEq/metaUFSafe)*100,100)+"%",width:2,background:"rgba(255,255,255,.7)",borderRadius:99}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3067}})
+                    , React.createElement('div', { style: {position:"absolute",right:Math.max(0,100-Math.min(metaUFSafe>0?(totUF/metaUFSafe)*100:0,96))+"%",top:"50%",transform:"translate(50%,-50%)",background:metaUFSafe>0&&(totUF/metaUFSafe)*100>=100?"#4ADE80":metaUFSafe>0&&(totUF/metaUFSafe)*100>=60?"#C9A84C":"#FCA5A5",color:"#1a0a0a",fontWeight:900,fontSize:10,borderRadius:99,padding:"2px 6px",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(0,0,0,.4)",pointerEvents:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3068}}
+                      , metaUFSafe>0?Math.round((totUF/metaUFSafe)*100)+"%":"0%"
                     )
                   )
                 )
@@ -3619,7 +3626,7 @@ function SupervisorFotoCard() {
                     , React.createElement('div', { style: {fontSize:38,fontWeight:900,lineHeight:1,color:"#C9A84C"} }, fmtUF2(ufHoy))
                     , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.45)",marginTop:4} }, "Cada UF suma al EQUIPO!")
                     , React.createElement('div', { style: {marginTop:8,background:"rgba(255,255,255,.1)",borderRadius:99,height:5,overflow:"hidden"} }
-                      , React.createElement('div', { style: {width:Math.min(META_UF>0?(ufHoy/(META_UF/WD_MES))*100:0,100)+"%",height:"100%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99} })
+                      , React.createElement('div', { style: {width:Math.min(metaUFSafe>0?(ufHoy/(metaUFSafe/WD_MES))*100:0,100)+"%",height:"100%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99} })
                     )
                   )
                   /* DPS HOY */
@@ -3812,8 +3819,8 @@ function SupervisorFotoCard() {
             , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"18px 22px",color:"#fff",marginBottom:20,display:"flex",alignItems:"center",gap:18}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3191}}
               , React.createElement('div', { style: {textAlign:"center",minWidth:80}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, React.createElement('div', { style: {fontSize:34,fontWeight:900,lineHeight:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, fmtUF2(totUF)), React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginTop:3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3192}}, "UF equipo" ))
               , React.createElement('div', { style: {flex:1}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3193}}
-                , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:7,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, React.createElement('span', { style: {color:"rgba(255,255,255,.75)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, "Avance del equipo"  ), React.createElement('span', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, (META_UF>0?Math.round((totUF/META_UF)*100):0)+"% de "+META_UF+" UF"))
-                , React.createElement(Bar, { pct: META_UF>0?Math.round((totUF/META_UF)*100):0, color: "rgba(255,255,255,.9)", h: 10, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3195}} )
+                , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:7,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, React.createElement('span', { style: {color:"rgba(255,255,255,.75)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, "Avance del equipo"  ), React.createElement('span', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3194}}, (META_UF>0?Math.round((totUF/metaUFSafe)*100):0)+"% de "+META_UF+" UF"))
+                , React.createElement(Bar, { pct: META_UF>0?Math.round((totUF/metaUFSafe)*100):0, color: "rgba(255,255,255,.9)", h: 10, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3195}} )
                 , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginTop:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3196}}, "Faltan "+fmtUF2(falta)+" UF para la meta del equipo")
               )
             )
