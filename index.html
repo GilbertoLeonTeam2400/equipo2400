@@ -3484,13 +3484,13 @@ function SupervisorFotoCard() {
                     var fotoUrl = m.fotoUrl || null;
                     var initials = getInitials(m.nombre);
                     var cardBg = "linear-gradient(135deg,#7F1D1D,#991B1B)";
-                    var borderStyle = m.esLider ? "3px solid #FCD34D" : "2px solid rgba(255,255,255,.15)";
+                    var borderStyle = "2px solid rgba(255,255,255,.15)";
                     var displayNombre = formatNombreCrak(m);
                     var nombreParts = displayNombre.split(' CRACK ');
 
                     return React.createElement('div', { key: idx, style: {background:cardBg,borderRadius:12,padding:"4px 4px 8px",textAlign:"center",border:borderStyle,boxShadow:"0 3px 12px rgba(0,0,0,.2)",position:"relative",display:"flex",flexDirection:"column",alignItems:"center",minWidth:0} },
                       m.esLider && React.createElement('div', { style: {position:"absolute",top:-7,left:"50%",transform:"translateX(-50%)",background:"#FCD34D",color:"#7F1D1D",fontSize:7,fontWeight:900,padding:"2px 6px",borderRadius:99,whiteSpace:"nowrap",letterSpacing:"0.04em",zIndex:1} }, "👑 LÍDER"),
-                      React.createElement('div', { style: {width:"clamp(70px,22vw,110px)",height:"clamp(70px,22vw,110px)",borderRadius:"50%",margin:"10px auto 0",border:m.esLider?"3px solid #FCD34D":"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:m.esLider?"0 0 0 3px rgba(252,211,77,.4), 0 0 18px rgba(201,168,76,.5), inset 0 1px 0 rgba(252,211,77,.3)":"0 0 0 2px rgba(201,168,76,.25), 0 0 12px rgba(201,168,76,.3), inset 0 1px 0 rgba(252,211,77,.15)"} },
+                      React.createElement('div', { style: {width:"clamp(70px,22vw,110px)",height:"clamp(70px,22vw,110px)",borderRadius:"50%",margin:"10px auto 0",border:"2px solid rgba(255,255,255,.3)",overflow:"hidden",background:fotoUrl?"#000":"#6B1A1A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 0 2px rgba(201,168,76,.25), 0 0 12px rgba(201,168,76,.3), inset 0 1px 0 rgba(252,211,77,.15)"} },
                         fotoUrl
                           ? React.createElement('img', { src: fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: m.nombre })
                           : React.createElement('span', { style: {fontSize:"clamp(20px,7vw,36px)",fontWeight:900,color:"#FCD34D"} }, initials)
