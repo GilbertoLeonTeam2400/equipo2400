@@ -462,6 +462,8 @@ const PIN_SUP_DEFAULT = "240024";
 var __supPinActual = PIN_SUP_DEFAULT;
 // Cargar PIN supervisor desde Firebase al iniciar
 (function(){
+  // Intentar cargar desde localStorage primero (disponible siempre)
+  try { var local = localStorage.getItem("SUP_PIN_LOCAL"); if(local && /^\d{6}$/.test(local)) __supPinActual = local; } catch(e){}
   if(window.__fbDb&&window.__fbDoc&&window.__fbGetDoc){
     window.__fbGetDoc(window.__fbDoc(window.__fbDb,"supervisor","config")).then(function(snap){
       if(snap.exists){var d=snap.data();if(d&&d.pin)__supPinActual=d.pin;}
@@ -2984,8 +2986,8 @@ function SupervisorFotoCard() {
   const totTitulares = totHombres + totMujeres;
   const pctH = totTitulares > 0 ? Math.round((totHombres/totTitulares)*100) : 0;
   const pctM = totTitulares > 0 ? Math.round((totMujeres/totTitulares)*100) : 0;
-  const proyV   = function(v){return (v.metaUF/WD_MES)*info.elapsed;};
-  const proyEq  = (META_UF/WD_MES)*info.elapsed;
+  const proyV   = function(v){return ((v.metaUF||0)/WD_MES)*info.elapsed;};
+  const proyEq  = META_UF>0 ? (META_UF/WD_MES)*info.elapsed : 0;
   const pctEq   = proyEq>0?Math.round((totUF/proyEq)*100):0;
   const TODAY   = hoyStr();
   const ufHoy   = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+r.uf;},0);},0);
@@ -3422,7 +3424,7 @@ function SupervisorFotoCard() {
                 /* Título dinámico */
                 , React.createElement('div', { style: {fontSize:"clamp(20px,5.5vw,30px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3022}}
                   , (function(){
-                    var pct = Math.round((totUF/META_UF)*100);
+                    var pct = META_UF>0 ? Math.round((totUF/META_UF)*100) : 0;
                     var frase = pct>=100 ? "¡Meta cumplida! El equipo lo logró" :
                                 pct>=80  ? "El vuelo del equipo va " :
                                 pct>=60  ? "El equipo avanza " :
@@ -3439,7 +3441,7 @@ function SupervisorFotoCard() {
                 /* Frase motivacional */
                 , React.createElement('div', { style: {fontSize:12,color:"rgba(201,168,76,.75)",fontStyle:"italic",marginBottom:18}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3039}}
                   , (function(){
-                    var pct = Math.round((totUF/META_UF)*100);
+                    var pct = META_UF>0 ? Math.round((totUF/META_UF)*100) : 0;
                     return pct>=100 ? '"El cóndor voló más alto que nunca."' :
                            pct>=80  ? '"Con enfoque inquebrantable, triunfamos con propósito."' :
                            pct>=60  ? '"Cada UF es un metro de altitud ganado."' :
@@ -3463,10 +3465,10 @@ function SupervisorFotoCard() {
                     , React.createElement('span', { style: {fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3062}}, "Avance hacia la meta"   )
                   )
                   , React.createElement('div', { style: {position:"relative",height:14,background:"rgba(255,255,255,.1)",borderRadius:99,border:"1px solid rgba(255,255,255,.12)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3065}}
-                    , React.createElement('div', { style: {position:"absolute",left:0,top:0,height:"100%",width:Math.min((totUF/META_UF)*100,100)+"%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99,transition:"width 1s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3066}} )
+                    , React.createElement('div', { style: {position:"absolute",left:0,top:0,height:"100%",width:Math.min(META_UF>0?(totUF/META_UF)*100:0,100)+"%",background:"linear-gradient(90deg,#8B1020,#C9A84C)",borderRadius:99,transition:"width 1s ease"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3066}} )
                     , proyEq>0&&React.createElement('div', { style: {position:"absolute",top:-5,bottom:-5,left:Math.min((proyEq/META_UF)*100,100)+"%",width:2,background:"rgba(255,255,255,.7)",borderRadius:99}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3067}})
-                    , React.createElement('div', { style: {position:"absolute",right:Math.max(0,100-Math.min((totUF/META_UF)*100,96))+"%",top:"50%",transform:"translate(50%,-50%)",background:(totUF/META_UF)*100>=100?"#4ADE80":(totUF/META_UF)*100>=60?"#C9A84C":"#FCA5A5",color:"#1a0a0a",fontWeight:900,fontSize:10,borderRadius:99,padding:"2px 6px",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(0,0,0,.4)",pointerEvents:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3068}}
-                      , Math.round((totUF/META_UF)*100)+"%"
+                    , React.createElement('div', { style: {position:"absolute",right:Math.max(0,100-Math.min(META_UF>0?(totUF/META_UF)*100:0,96))+"%",top:"50%",transform:"translate(50%,-50%)",background:META_UF>0&&(totUF/META_UF)*100>=100?"#4ADE80":META_UF>0&&(totUF/META_UF)*100>=60?"#C9A84C":"#FCA5A5",color:"#1a0a0a",fontWeight:900,fontSize:10,borderRadius:99,padding:"2px 6px",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(0,0,0,.4)",pointerEvents:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3068}}
+                      , META_UF>0?Math.round((totUF/META_UF)*100)+"%":"0%"
                     )
                   )
                 )
@@ -4628,10 +4630,15 @@ function SupervisorFotoCard() {
                           nuevoPinSup = nuevoPinSup.trim();
                           if (!/^\d{6}$/.test(nuevoPinSup)) { window.alert("El PIN debe ser exactamente 6 dígitos numéricos."); return; }
                           __supPinActual = nuevoPinSup;
+                          // Guardar en localStorage (siempre funciona)
+                          try { localStorage.setItem("SUP_PIN_LOCAL", nuevoPinSup); } catch(e){}
+                          // Intentar guardar en Firebase (puede fallar por permisos)
                           if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
                             window.__fbSetDoc(window.__fbDoc(window.__fbDb,"supervisor","config"),{pin:nuevoPinSup})
                               .then(function(){ window.alert("✅ PIN de supervisor actualizado correctamente."); })
-                              .catch(function(e){ window.alert("Error: " + e.message); });
+                              .catch(function(){ window.alert("✅ PIN actualizado en esta sesión.\n⚠️ No se pudo sincronizar con la nube (permisos). El PIN quedó guardado localmente en este dispositivo."); });
+                          } else {
+                            window.alert("✅ PIN actualizado en esta sesión (guardado localmente).");
                           }
                         },
                         style: {background:"#FEF3C7",color:"#92400E",border:"1px solid #FCD34D",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700}
