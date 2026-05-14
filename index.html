@@ -2799,6 +2799,16 @@ function SupervisorFotoCard() {
               });
             });
             setEquipo(merged);
+            // Cargar fotos desde colección separada para no saturar el doc principal
+            if (window.__fbDb && window.__fbDoc && window.__fbGetDoc) {
+              merged.forEach(function(v) {
+                window.__fbGetDoc(window.__fbDoc(window.__fbDb,"fotos",String(v.id))).then(function(snap){
+                  if (snap.exists && snap.data && snap.data().fotoUrl) {
+                    setEquipo(function(prev){ return prev.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fotoUrl:snap.data().fotoUrl}) : eq; }); });
+                  }
+                }).catch(function(){});
+              });
+            }
             setTimeout(cargarHistorialMesesAnteriores, 800);
           }
           const m = snapData.metaEquipo;
@@ -2950,7 +2960,7 @@ function SupervisorFotoCard() {
   const [crmForm,  setCrmForm]  = useState(EMPTY_CRM_FORM);
   const [crmModal, setCrmModal] = useState(false);
   const [crmEdit,  setCrmEdit]  = useState(null);
-  const [crmVista, setCrmVista] = useState("activos"); // activos | cerrados | noConcretados | ufCerradas | ufPotencial
+  const [crmVista, setCrmVista] = useState("calendario"); // calendario | activos | cerrados | noConcretados | ufCerradas | ufPotencial
   // Pop-up recordatorio cierre CRM
   const [cierreRecordatorio, setCierreRecordatorio] = useState(false);
   // Reconocimientos
@@ -3021,7 +3031,13 @@ function SupervisorFotoCard() {
   const pctEq   = proyEq>0?Math.round((totUF/proyEq)*100):0;
   const TODAY   = hoyStr();
   const ufHoy   = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseFloat(r.uf)||0);},0);},0);
-  const dpsHoy  = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseInt(r.dps)||0);},0);},0);
+  // DPS HOY: suma los dps de todos los reportes enviados hoy
+  const dpsHoy  = equipo.reduce(function(s,v){
+    var repsHoy = (v.rep||[]).filter(function(r){return r.fecha===TODAY;});
+    if (repsHoy.length === 0) return s;
+    // Si hay un reporte de hoy, el campo dps del rep es el DPS declarado ese día
+    return s + repsHoy.reduce(function(a,r){return a+(parseInt(r.dps)||0);},0);
+  },0);
   const top5    = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5).map(function(v,i){return {nombre:v.nombre,pos:i+1};});
 
   // Build last 3 months keys for historial
@@ -3137,6 +3153,11 @@ function SupervisorFotoCard() {
     const conTotal    = cierresHoy.filter(function(c){return c.conecta;}).length;
     const fonasaTotal = cierresHoy.filter(function(c){return c.origen==="fonasa";}).length;
     const isapraTotal = cierresHoy.filter(function(c){return c.origen==="isapre";}).length;
+    // Sub-conteo por isapre de origen
+    var isapre_detalle = {};
+    cierresHoy.filter(function(c){return c.origen==="isapre"&&c.isapre;}).forEach(function(c){
+      isapre_detalle[c.isapre] = (isapre_detalle[c.isapre]||0)+1;
+    });
     // Guardar el reporte del día con detalle de cierres
     const nuevoRep = {
       fecha: TODAY,
@@ -3152,6 +3173,7 @@ function SupervisorFotoCard() {
       conecta: conTotal,
       fonasa: fonasaTotal,
       isapre: isapraTotal,
+      isapre_detalle: isapre_detalle,
       detalleCierres: cierresHoy.slice(), // array completo de cierres
     };
     const nuevoEquipo = equipo.map(function(v){
@@ -3664,6 +3686,46 @@ function SupervisorFotoCard() {
                   )
                 )
               )
+              /* TOP 5 DEL MES */
+              , (function(){
+                var top5sorted = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5);
+                if (top5sorted.length === 0) return null;
+                var medalColors = ["#FFD700","#C0C0C0","#CD7F32","#C9A84C","#C9A84C"];
+                var medalEmojis = ["🥇","🥈","🥉","4️⃣","5️⃣"];
+                return React.createElement('div', { style: {margin:"0 0 16px",background:"linear-gradient(135deg,#1a0a00,#2a1500,#1a0a00)",borderRadius:18,padding:"18px 20px",border:"2px solid rgba(201,168,76,.35)",boxShadow:"0 4px 24px rgba(201,168,76,.15)"} }
+                  , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,marginBottom:14} }
+                    , React.createElement('div', { style: {fontSize:18} }, "🏆")
+                    , React.createElement('div', { style: {fontSize:13,fontWeight:900,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.12em"} }, "TOP 5 del mes")
+                    , React.createElement('div', { style: {flex:1,height:1,background:"rgba(201,168,76,.25)",marginLeft:8} })
+                  )
+                  , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:8} }
+                    , top5sorted.map(function(v,i){
+                      var pctMeta = v.metaUF>0 ? Math.min(Math.round((v.uf/v.metaUF)*100),100) : 0;
+                      var initials = v.nombre ? v.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                      return React.createElement('div', { key: v.id, style: {display:"flex",alignItems:"center",gap:10,background:i===0?"rgba(255,215,0,.08)":"rgba(255,255,255,.04)",borderRadius:12,padding:"10px 12px",border:i===0?"1px solid rgba(255,215,0,.25)":"1px solid rgba(255,255,255,.06)"} }
+                        , React.createElement('div', { style: {fontSize:i===0?22:16,minWidth:28,textAlign:"center"} }, medalEmojis[i])
+                        , React.createElement('div', { style: {width:34,height:34,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid "+(medalColors[i]||"#C9A84C"),background:v.fotoUrl?"#000":"rgba(201,168,76,.15)",display:"flex",alignItems:"center",justifyContent:"center"} }
+                          , v.fotoUrl
+                            ? React.createElement('img', { src: v.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: v.nombre })
+                            : React.createElement('span', { style: {fontSize:12,fontWeight:900,color:medalColors[i]||"#C9A84C"} }, initials)
+                        )
+                        , React.createElement('div', { style: {flex:1,minWidth:0} }
+                          , React.createElement('div', { style: {fontSize:12,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"} }
+                            , v.nombre.split(' ')[0]+" "+(v.nombre.split(' ')[1]||"")
+                          )
+                          , React.createElement('div', { style: {marginTop:4,background:"rgba(255,255,255,.1)",borderRadius:99,height:4,overflow:"hidden"} }
+                            , React.createElement('div', { style: {width:pctMeta+"%",height:"100%",borderRadius:99,background:"linear-gradient(90deg,"+(medalColors[i]||"#C9A84C")+",rgba(255,255,255,.5))",transition:"width .8s ease"} })
+                          )
+                        )
+                        , React.createElement('div', { style: {textAlign:"right",flexShrink:0} }
+                          , React.createElement('div', { style: {fontSize:15,fontWeight:900,color:medalColors[i]||"#C9A84C"} }, fmtUF2(v.uf)+" UF")
+                          , React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.45)",marginTop:1} }, pctMeta+"% meta")
+                        )
+                      );
+                    })
+                  )
+                );
+              })()
               /* Eslogan */
               , React.createElement('div', { style: {borderTop:"1px solid rgba(255,255,255,.08)",padding:"14px 22px",textAlign:"center"} }
                 , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:"rgba(201,168,76,.8)",letterSpacing:"0.05em",fontStyle:"italic"} }, "\"Nos une un propósito, logramos lo extraordinario\"")
@@ -3682,32 +3744,9 @@ function SupervisorFotoCard() {
             /* ===== ESTOS SOMOS LOS CRAKS ===== */
             , React.createElement('div', { style: {height:18} })
             , (function(){
-              var TEAM_MEMBERS = [
-                {nombre:"GILBERTO LEON DURAN", cargo:"Supervisor", esLider:true},
-                {nombre:"RODRIGO ORTIZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"MARCELA MERINO", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"CHRISTIAN DOMINGUEZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"LOLA PERDOMO", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"PAMELA TRINCADO", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"KENIA GÓMEZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"LUISANA OVALLOS", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"MARIANA RAMÍREZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"CRISTINA UNDURRAGA", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"LESLY SANDOVAL", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"CAMILA URRUTIA", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"CRISTIAN NEIRA", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"LEONOR RAMÍREZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"ROMINA SALINAS", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"PERLA ROJAS", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"ELIZABETH GALVEZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"PAULINA OVALLE", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"MARIA ELENA ÁLVAREZ", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"ALEJANDRA CIFUENTES", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"CATALINA FLORES", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"ROMINA ROCHA", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"ANA AVILES", cargo:"Asesor Comercial", esLider:false},
-                {nombre:"NICOLE MOLINETT", cargo:"Asesor Comercial", esLider:false}
-              ];
+              // Usar equipo dinámico en lugar de lista hardcodeada
+              var TEAM_MEMBERS = [{nombre:"GILBERTO LEON DURAN", cargo:"Supervisor", esLider:true, fotoUrl:window.__supFotoGlobal||null}]
+                .concat(equipo.map(function(v){ return {nombre:v.nombre, cargo:"Asesor Comercial", esLider:false, fotoUrl:v.fotoUrl||null, id:v.id, fechaNac:v.fechaNac||""}; }));
 
               function getInitials(nombre) {
                 var parts = nombre.split(' ').filter(function(p){return p.length>0;});
@@ -3747,8 +3786,7 @@ function SupervisorFotoCard() {
 
                 React.createElement('div', { className:"desktop-craks-grid", style: {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:20} },
                   TEAM_MEMBERS.map(function(m, idx) {
-                    var eqData = (equipo||[]).find(function(e){ return e.nombre && e.nombre.toUpperCase()===m.nombre.toUpperCase(); });
-                    var fotoUrl = m.esLider ? supFotoFromStorage : (eqData && eqData.fotoUrl ? eqData.fotoUrl : null);
+                    var fotoUrl = m.fotoUrl || null;
                     var initials = getInitials(m.nombre);
                     var cardBg = "linear-gradient(135deg,#7F1D1D,#991B1B)";
                     var borderStyle = m.esLider ? "3px solid #FCD34D" : "2px solid rgba(255,255,255,.15)";
@@ -3881,7 +3919,18 @@ function SupervisorFotoCard() {
                   , form.vid !== "" && pinFormOk && (
                     React.createElement('div', null
                   , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16} }
-                    , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:RD,textTransform:"uppercase",letterSpacing:"0.1em"} }, "1. Actividad del día")
+                    , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10} }
+                      , (function(){
+                          var vFoto = equipo.find(function(e){return String(e.id)===String(form.vid);});
+                          var initials = vFoto && vFoto.nombre ? vFoto.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                          return React.createElement('div', { style: {width:40,height:40,borderRadius:"50%",overflow:"hidden",border:"2px solid "+RD,flexShrink:0,background:vFoto&&vFoto.fotoUrl?"#000":"rgba(233,7,41,.1)",display:"flex",alignItems:"center",justifyContent:"center"} }
+                            , vFoto && vFoto.fotoUrl
+                              ? React.createElement('img', { src: vFoto.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"}, alt: vFoto.nombre })
+                              : React.createElement('span', { style: {fontSize:14,fontWeight:900,color:RD} }, initials)
+                          );
+                        })()
+                      , React.createElement('div', { style: {fontSize:13,fontWeight:800,color:RD,textTransform:"uppercase",letterSpacing:"0.1em"} }, "1. Actividad del día")
+                    )
                     , React.createElement('button', {
                         onClick: function(){setPinFormOk(false);setPinFormulario("");},
                         style: {background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:10,padding:"6px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:700}
@@ -4169,9 +4218,19 @@ function SupervisorFotoCard() {
               React.createElement('div', null,
                 /* Header */
                 React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12} },
-                  React.createElement('div', null,
-                    React.createElement('div', { style: {fontSize:20,fontWeight:900,color:RD} }, "Mi Agenda — "+(crmV?crmV.nombre:"")),
-                    React.createElement('div', { style: {fontSize:13,color:"#6B7280",marginTop:2} }, "Solo tú y tu supervisor pueden ver estos datos")
+                  React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12} },
+                    (function(){
+                      var initials = crmV && crmV.nombre ? crmV.nombre.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                      return React.createElement('div', { style: {width:48,height:48,borderRadius:"50%",overflow:"hidden",border:"2px solid "+RD,flexShrink:0,background:crmV&&crmV.fotoUrl?"#000":"rgba(233,7,41,.1)",display:"flex",alignItems:"center",justifyContent:"center"} }
+                        , crmV && crmV.fotoUrl
+                          ? React.createElement('img', { src: crmV.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"} })
+                          : React.createElement('span', { style: {fontSize:18,fontWeight:900,color:RD} }, initials)
+                      );
+                    })(),
+                    React.createElement('div', null,
+                      React.createElement('div', { style: {fontSize:20,fontWeight:900,color:RD} }, "Mi Agenda — "+(crmV?crmV.nombre:"")),
+                      React.createElement('div', { style: {fontSize:13,color:"#6B7280",marginTop:2} }, "Solo tú y tu supervisor pueden ver estos datos")
+                    )
                   ),
                   React.createElement('div', { style: {display:"flex",gap:10} },
                     React.createElement('button', { onClick:abrirNuevoContacto, style:Object.assign({},BTN,{padding:"10px 20px",fontSize:14}) }, "+ Nuevo cliente"),
@@ -4212,7 +4271,7 @@ function SupervisorFotoCard() {
 
                 /* Sub-tabs */
                 React.createElement('div', { style: {display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"} },
-                  [["activos","👥 Clientes Activos"],["cerrados","✅ Clientes Cerrados"],["noConcretados","❌ Cliente Desiste"],["ufCerradas","💰 UF's Cerradas"],["ufPotencial","🎯 UF Potencial Cierre"],["calendario","📅 Calendario"]].map(function(st){
+                  [["calendario","📅 Calendario"],["activos","👥 Clientes Activos"],["cerrados","✅ Clientes Cerrados"],["noConcretados","❌ Cliente Desiste"],["ufCerradas","💰 UF's Cerradas"],["ufPotencial","🎯 UF Potencial Cierre"]].map(function(st){
                     return React.createElement('button',{key:st[0],onClick:function(){setCrmVista(st[0]);},
                       style:{padding:"8px 14px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,
                         background:crmVista===st[0]?R:"#E5E7EB",color:crmVista===st[0]?"#fff":"#374151"}},st[1]);
@@ -4392,11 +4451,31 @@ function SupervisorFotoCard() {
                     var hoy2 = new Date();
                     var anioHoy = hoy2.getFullYear();
                     var mesHoy = hoy2.getMonth();
-                    // Build calendar days
                     var primerDia = new Date(anioHoy, mesHoy, 1).getDay();
                     var diasEnMes = new Date(anioHoy, mesHoy+1, 0).getDate();
                     var diasSem = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-                    // Map clients to their next activity date
+                    var diaHoy2 = hoy2.getDate();
+
+                    // Tipos de evento con colores (sugerencia B)
+                    var TIPOS_EVENTO = [
+                      {k:"llamada",    l:"📞 Llamada de prospección",  col:"#2563EB", sug:"Ej: Llamada — José Torres"},
+                      {k:"cotizacion", l:"📋 Cotización enviada",       col:"#D97706", sug:"Ej: Cotización — Ana Rodríguez"},
+                      {k:"cierre",     l:"🟢 Cierre agendado",          col:"#16A34A", sug:"Ej: Cierre — Pedro Soto"},
+                      {k:"seguimiento",l:"🔴 Seguimiento urgente",      col:"#DC2626", sug:"Ej: Seguimiento — Clínica Santa María"},
+                      {k:"visita",     l:"🚶 Visita Terreno",           col:"#7C3AED", sug:"Ej: Visita Terreno — Clínica Santa María"},
+                      {k:"reunion",    l:"📅 Reunión",                  col:"#0891B2", sug:"Ej: Reunión — Empresa ABC"},
+                    ];
+                    var TIPOS_MAP = {};
+                    TIPOS_EVENTO.forEach(function(t){ TIPOS_MAP[t.k]=t; });
+
+                    // Clave en localStorage para eventos manuales del ejecutivo
+                    var calKey = "cal_"+crmVid+"_"+anioHoy+"-"+String(mesHoy+1).padStart(2,"0");
+
+                    // Leer eventos manuales
+                    var eventosMan = [];
+                    try { eventosMan = JSON.parse(localStorage.getItem(calKey)||"[]"); } catch(e){}
+
+                    // Eventos de clientes CRM por día
                     var clientesPorDia = {};
                     crmData.forEach(function(c) {
                       if (!c.proxFecha) return;
@@ -4405,17 +4484,56 @@ function SupervisorFotoCard() {
                       if (d.getMonth() === mesHoy && d.getFullYear() === anioHoy) {
                         var dia = d.getDate();
                         if (!clientesPorDia[dia]) clientesPorDia[dia] = [];
-                        clientesPorDia[dia].push(c);
+                        clientesPorDia[dia].push({tipo:"crm",data:c});
                       }
                     });
-                    var diaHoy2 = hoy2.getDate();
+
+                    // Agregar eventos manuales
+                    eventosMan.forEach(function(ev) {
+                      var dia = parseInt(ev.dia);
+                      if (!clientesPorDia[dia]) clientesPorDia[dia] = [];
+                      clientesPorDia[dia].push({tipo:"manual",data:ev});
+                    });
+
                     var celdas = [];
-                    // Blanks before month starts
                     for (var b=0; b<primerDia; b++) celdas.push(null);
                     for (var d2=1; d2<=diasEnMes; d2++) celdas.push(d2);
+
+                    function agregarEvento(dia) {
+                      var tipo = TIPOS_EVENTO[0];
+                      var tipos_str = TIPOS_EVENTO.map(function(t,i){ return (i+1)+". "+t.l; }).join("\n");
+                      var selIdx = parseInt(window.prompt("Tipo de evento:\n"+tipos_str+"\n\nEscribe el número:","1"))-1;
+                      if (isNaN(selIdx) || selIdx<0 || selIdx>=TIPOS_EVENTO.length) return;
+                      tipo = TIPOS_EVENTO[selIdx];
+                      var desc = window.prompt(tipo.sug+":", "");
+                      if (!desc || !desc.trim()) return;
+                      var evNuevo = {id: Date.now(), dia: dia, tipo: tipo.k, desc: desc.trim()};
+                      var nuevos = eventosMan.concat([evNuevo]);
+                      try { localStorage.setItem(calKey, JSON.stringify(nuevos)); } catch(e){}
+                      // Forzar re-render cambiando algo en el estado
+                      setCrmData(crmData.slice());
+                    }
+
+                    function eliminarEvento(evId) {
+                      if (!window.confirm("¿Eliminar este evento?")) return;
+                      var nuevos = eventosMan.filter(function(e){ return e.id !== evId; });
+                      try { localStorage.setItem(calKey, JSON.stringify(nuevos)); } catch(e){}
+                      setCrmData(crmData.slice());
+                    }
+
                     return React.createElement("div", null,
-                      React.createElement("div", {style:{fontSize:16,fontWeight:900,color:RD,marginBottom:14}},
+                      React.createElement("div", {style:{fontSize:16,fontWeight:900,color:RD,marginBottom:4}},
                         new Date(anioHoy,mesHoy,1).toLocaleString("es-CL",{month:"long",year:"numeric"}).replace(/^./,function(c){return c.toUpperCase();})
+                      ),
+                      React.createElement("div", {style:{fontSize:11,color:"#9CA3AF",marginBottom:12}}, "Toca un día para agregar un evento. Los eventos manuales se guardan en este dispositivo."),
+                      // Leyenda de tipos
+                      React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}},
+                        TIPOS_EVENTO.map(function(t){
+                          return React.createElement("div",{key:t.k,style:{display:"flex",alignItems:"center",gap:4,fontSize:10,background:"rgba(0,0,0,.04)",borderRadius:6,padding:"3px 7px"}},
+                            React.createElement("span",{style:{width:8,height:8,borderRadius:"50%",background:t.col,flexShrink:0,display:"inline-block"}}),
+                            t.l
+                          );
+                        })
                       ),
                       React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:6}},
                         diasSem.map(function(ds){
@@ -4427,42 +4545,57 @@ function SupervisorFotoCard() {
                           if(!dia) return React.createElement("div",{key:"b"+idx3});
                           var eventos = clientesPorDia[dia]||[];
                           var esHoy = dia===diaHoy2;
-                          return React.createElement("div",{key:dia,style:{
-                            minHeight:64,borderRadius:10,padding:"6px 4px",
-                            background:esHoy?"linear-gradient(135deg,"+R+",#8B0418)":"#fff",
-                            border:esHoy?"none":"1px solid #E5E7EB",
-                            boxShadow:esHoy?"0 4px 12px rgba(233,7,41,.25)":"none"
-                          }},
+                          return React.createElement("div",{key:dia,
+                            onClick:function(){ agregarEvento(dia); },
+                            style:{minHeight:72,borderRadius:10,padding:"6px 4px",cursor:"pointer",
+                              background:esHoy?"linear-gradient(135deg,"+R+",#8B0418)":"#fff",
+                              border:esHoy?"none":"1px solid #E5E7EB",
+                              boxShadow:esHoy?"0 4px 12px rgba(233,7,41,.25)":"none",
+                              transition:"box-shadow .15s"}},
                             React.createElement("div",{style:{fontSize:12,fontWeight:esHoy?900:700,color:esHoy?"#fff":dia<diaHoy2?"#9CA3AF":"#374151",textAlign:"center",marginBottom:3}},dia),
-                            eventos.slice(0,2).map(function(c,ci){
+                            eventos.slice(0,3).map(function(ev,ci){
+                              var col = ev.tipo==="crm" ? R : (TIPOS_MAP[ev.data.tipo]||{col:"#6B7280"}).col;
+                              var label = ev.tipo==="crm" ? ev.data.nombre.split(" ")[0] : ev.data.desc.slice(0,12);
                               return React.createElement("div",{key:ci,style:{fontSize:9,fontWeight:700,borderRadius:4,padding:"1px 3px",marginBottom:2,
-                                background:esHoy?"rgba(255,255,255,.2)":"rgba(233,7,41,.08)",
-                                color:esHoy?"#FCD34D":R,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
-                                c.nombre.split(" ")[0]
+                                background:esHoy?"rgba(255,255,255,.2)":col+"18",
+                                color:esHoy?"#FCD34D":col,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                                borderLeft:"2px solid "+col}},
+                                label
                               );
                             }),
-                            eventos.length>2&&React.createElement("div",{style:{fontSize:9,color:esHoy?"rgba(255,255,255,.6)":"#9CA3AF",textAlign:"center"}},"+",eventos.length-2," más")
+                            eventos.length>3&&React.createElement("div",{style:{fontSize:9,color:esHoy?"rgba(255,255,255,.6)":"#9CA3AF",textAlign:"center"}},"+",eventos.length-3)
                           );
                         })
                       ),
-                      // List of events this month
-                      Object.keys(clientesPorDia).sort(function(a,b){return parseInt(a)-parseInt(b);}).length > 0 && React.createElement("div",{style:{marginTop:16,background:"#fff",borderRadius:12,padding:"14px 16px",boxShadow:"0 2px 8px rgba(0,0,0,.05)"}},
-                        React.createElement("div",{style:{fontWeight:800,color:RD,fontSize:13,marginBottom:10}},"Actividades agendadas este mes"),
-                        Object.keys(clientesPorDia).sort(function(a,b){return parseInt(a)-parseInt(b);}).map(function(dia3){
-                          return React.createElement("div",{key:dia3,style:{marginBottom:8}},
-                            React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"#9CA3AF",marginBottom:4}},"Día "+dia3),
-                            clientesPorDia[dia3].map(function(c,ci){
-                              var ACTS={llamar:"📞",cotizar:"📋",reunion:"📅",dps:"✅",cerrado:"🎉",perdido:"❌"};
-                              return React.createElement("div",{key:ci,style:{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",background:"#F8FAFC",borderRadius:8,marginBottom:4}},
-                                React.createElement("span",{style:{fontSize:14}},(ACTS[c.proxAct]||"📌")),
-                                React.createElement("div",{style:{flex:1}},
-                                  React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"#374151"}},c.nombre),
-                                  c.plan&&React.createElement("div",{style:{fontSize:11,color:R}},c.plan)
-                                )
+                      // Lista de todos los eventos del mes
+                      React.createElement("div",{style:{marginTop:16,background:"#fff",borderRadius:12,padding:"14px 16px",boxShadow:"0 2px 8px rgba(0,0,0,.05)"}},
+                        React.createElement("div",{style:{fontWeight:800,color:RD,fontSize:13,marginBottom:10}},"📋 Actividades del mes"),
+                        Object.keys(clientesPorDia).sort(function(a,b){return parseInt(a)-parseInt(b);}).length === 0
+                          ? React.createElement("div",{style:{textAlign:"center",color:"#9CA3AF",fontSize:13,padding:"20px 0"}},"Sin eventos este mes. Toca cualquier día para agregar uno.")
+                          : Object.keys(clientesPorDia).sort(function(a,b){return parseInt(a)-parseInt(b);}).map(function(dia3){
+                              return React.createElement("div",{key:dia3,style:{marginBottom:10}},
+                                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"#9CA3AF",marginBottom:4,display:"flex",alignItems:"center",gap:6}},
+                                  React.createElement("span",null,"Día "+dia3),
+                                  React.createElement("div",{style:{flex:1,height:1,background:"#F3F4F6"}})
+                                ),
+                                clientesPorDia[dia3].map(function(ev,ci){
+                                  var esManual = ev.tipo==="manual";
+                                  var ACTS={llamar:"📞",cotizar:"📋",reunion:"📅",dps:"✅",cerrado:"🎉",perdido:"❌"};
+                                  var col = esManual ? (TIPOS_MAP[ev.data.tipo]||{col:"#6B7280"}).col : R;
+                                  var etiqueta = esManual ? (TIPOS_MAP[ev.data.tipo]||{l:"Evento"}).l.split(" ").slice(1).join(" ") : (ACTS[ev.data.proxAct]||"📌")+" "+ev.data.proxAct;
+                                  return React.createElement("div",{key:ci,style:{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"#F8FAFC",borderRadius:8,marginBottom:4,borderLeft:"3px solid "+col}},
+                                    React.createElement("div",{style:{flex:1}},
+                                      React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"#374151"}}, esManual ? ev.data.desc : ev.data.nombre),
+                                      React.createElement("div",{style:{fontSize:10,color:col,fontWeight:600,marginTop:1}}, etiqueta)
+                                    ),
+                                    esManual && React.createElement("button",{
+                                      onClick:function(e){ e.stopPropagation(); eliminarEvento(ev.data.id); },
+                                      style:{background:"#FEE2E2",color:"#B91C1C",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",fontWeight:700}
+                                    },"✕")
+                                  );
+                                })
                               );
                             })
-                          );
-                        })
                       )
                     );
                   }
@@ -4635,7 +4768,7 @@ function SupervisorFotoCard() {
               React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3668}}
                 , React.createElement('div', { style: {display:"flex",gap:10,marginBottom:22,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3669}}
                   , React.createElement('div', { style: {display:"flex",gap:10,flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3670}}
-                    , [["dashboard","📊 Dashboard"],["carga","📥 Cargar UF/DPS Mes en Curso"],["gestion","👥 Gestionar Equipo"],["editar","✏️ Editar Estadísticas de Productividad Individuales"],["meta","🎯 Meta del Equipo"],["excel","📂 Carga de Datos Excel"],["agentes0","🚨 Agentes en 0"],["uflineales","📈 UF's Lineales"]].map(function(item){
+                    , [["dashboard","📊 Dashboard"],["carga","📥 Cargar UF/DPS Mes en Curso"],["gestion","👥 Gestionar Equipo"],["editar","✏️ Editar Estadísticas de Productividad Individuales"],["calEjec","📅 Calendario Ejecutivos"],["meta","🎯 Meta del Equipo"],["excel","📂 Carga de Datos Excel"],["agentes0","🚨 Agentes en 0"],["uflineales","📈 UF's Lineales"]].map(function(item){
                       return React.createElement('button', { key: item[0], onClick: function(){if(item[0]==="carga")abrirCarga();else setSupVista(item[0]);}, style: {padding:"10px 18px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,background:supVista===item[0]?R:"#E5E7EB",color:supVista===item[0]?"#fff":"#374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3672}}, item[1]);
                     })
                   )
@@ -4718,16 +4851,20 @@ function SupervisorFotoCard() {
                                           reader.onload = function(ev) {
                                             var img = new Image();
                                             img.onload = function() {
-                                              var MAX = 400;
+                                              // Comprimir agresivamente para evitar límite de Firestore (1MB/doc)
+                                              var MAX = 200; // máx 200px — suficiente para avatar
                                               var w = img.width, h = img.height;
                                               if (w > MAX || h > MAX) { var sc=Math.min(MAX/w,MAX/h); w=Math.round(w*sc); h=Math.round(h*sc); }
                                               var canvas = document.createElement("canvas"); canvas.width=w; canvas.height=h;
                                               canvas.getContext("2d").drawImage(img,0,0,w,h);
-                                              var dataUrl = canvas.toDataURL("image/jpeg",0.82);
+                                              var dataUrl = canvas.toDataURL("image/jpeg",0.65); // calidad 65% ~ 8-15KB
                                               var newEquipo = equipo.map(function(eq){ return eq.id===v.id ? Object.assign({},eq,{fotoUrl:dataUrl}) : eq; });
                                               setEquipo(newEquipo);
+                                              // Guardar foto en doc separado "fotos/{id}" para no saturar el doc principal
                                               if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc) {
-                                                window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",info.mesKey),{equipo:newEquipo}).catch(function(err){console.warn("Foto save err",err);});
+                                                window.__fbSetDoc(window.__fbDoc(window.__fbDb,"fotos",String(v.id)),{fotoUrl:dataUrl,nombre:v.nombre,ts:Date.now()})
+                                                  .then(function(){ console.log("[Foto] Guardada en colección fotos"); })
+                                                  .catch(function(err){ console.warn("[Foto] Error guardando foto:", err); });
                                               }
                                             };
                                             img.src = ev.target.result;
@@ -4917,6 +5054,76 @@ function SupervisorFotoCard() {
                 )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
                 , supVista==="agentes0"&&React.createElement(AgentesEnCeroView, { equipo: equipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3773}} )
+                , supVista==="calEjec"&&(
+                  React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:26,boxShadow:"0 3px 16px rgba(233,7,41,.07)"} }
+                    , React.createElement('div', { style: {fontSize:19,fontWeight:900,color:RD,marginBottom:4} }, "📅 Calendario Ejecutivos")
+                    , React.createElement('div', { style: {fontSize:13,color:"#6B7280",marginBottom:20} }, "Eventos manuales registrados por cada ejecutivo este mes.")
+                    , (function(){
+                        var hoy3 = new Date();
+                        var anioC = hoy3.getFullYear();
+                        var mesC  = hoy3.getMonth();
+                        var mesKeyC = anioC+"-"+String(mesC+1).padStart(2,"0");
+                        var TIPOS_SUP = {
+                          llamada:    {l:"📞 Llamada",     col:"#2563EB"},
+                          cotizacion: {l:"📋 Cotización",  col:"#D97706"},
+                          cierre:     {l:"🟢 Cierre",      col:"#16A34A"},
+                          seguimiento:{l:"🔴 Seguimiento", col:"#DC2626"},
+                          visita:     {l:"🚶 Terreno",     col:"#7C3AED"},
+                          reunion:    {l:"📅 Reunión",     col:"#0891B2"},
+                        };
+                        // Leer calendarios de todos los ejecutivos desde localStorage
+                        var todosPorDia = {}; // dia -> [{ejecutivo, tipo, desc}]
+                        equipo.forEach(function(v){
+                          var calK = "cal_"+v.id+"_"+mesKeyC;
+                          var evs = [];
+                          try { evs = JSON.parse(localStorage.getItem(calK)||"[]"); } catch(e){}
+                          evs.forEach(function(ev){
+                            var dia = String(ev.dia);
+                            if (!todosPorDia[dia]) todosPorDia[dia] = [];
+                            todosPorDia[dia].push({ejecutivo:v.nombre, tipo:ev.tipo, desc:ev.desc, id:ev.id, vid:v.id});
+                          });
+                        });
+                        var diasConEventos = Object.keys(todosPorDia).sort(function(a,b){return parseInt(a)-parseInt(b);});
+                        if (diasConEventos.length === 0) {
+                          return React.createElement('div', { style: {textAlign:"center",padding:"40px 0",color:"#9CA3AF"} }
+                            , React.createElement('div', { style: {fontSize:32,marginBottom:12} }, "📅")
+                            , React.createElement('div', { style: {fontSize:15,fontWeight:700} }, "Sin eventos registrados este mes")
+                            , React.createElement('div', { style: {fontSize:13,marginTop:6} }, "Los ejecutivos aún no han agregado eventos en su Calendario.")
+                          );
+                        }
+                        var mesLabel = new Date(anioC,mesC,1).toLocaleString("es-CL",{month:"long",year:"numeric"}).replace(/^./,function(c){return c.toUpperCase();});
+                        return React.createElement('div', null
+                          , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:14} }, mesLabel)
+                          , diasConEventos.map(function(dia){
+                              return React.createElement('div', { key: dia, style: {marginBottom:16} }
+                                , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:"#9CA3AF",marginBottom:6,display:"flex",alignItems:"center",gap:8} }
+                                  , React.createElement('div', { style: {background:"#F3F4F6",borderRadius:8,padding:"3px 10px",fontWeight:900,color:"#374151"} }, "Día "+dia)
+                                  , React.createElement('div', { style: {flex:1,height:1,background:"#F3F4F6"} })
+                                )
+                                , todosPorDia[dia].map(function(ev,ei){
+                                    var t = TIPOS_SUP[ev.tipo]||{l:"Evento",col:"#6B7280"};
+                                    var initials = ev.ejecutivo ? ev.ejecutivo.split(' ').slice(0,2).map(function(p){return p[0];}).join('') : '?';
+                                    var vData = equipo.find(function(e){return e.id===ev.vid;});
+                                    return React.createElement('div', { key: ei, style: {display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,border:"1px solid #F3F4F6",marginBottom:6,borderLeft:"4px solid "+t.col} }
+                                      , React.createElement('div', { style: {width:32,height:32,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"1.5px solid "+t.col,background:vData&&vData.fotoUrl?"#000":"rgba(0,0,0,.05)",display:"flex",alignItems:"center",justifyContent:"center"} }
+                                        , vData && vData.fotoUrl
+                                          ? React.createElement('img', { src: vData.fotoUrl, style: {width:"100%",height:"100%",objectFit:"cover"} })
+                                          : React.createElement('span', { style: {fontSize:11,fontWeight:900,color:t.col} }, initials)
+                                      )
+                                      , React.createElement('div', { style: {flex:1,minWidth:0} }
+                                        , React.createElement('div', { style: {fontSize:12,fontWeight:800,color:"#374151",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"} }, ev.desc)
+                                        , React.createElement('div', { style: {fontSize:11,color:t.col,fontWeight:600,marginTop:1} }
+                                          , t.l+" · "+ev.ejecutivo.split(' ')[0]+" "+(ev.ejecutivo.split(' ')[1]||"")
+                                        )
+                                      )
+                                    );
+                                  })
+                              );
+                            })
+                        );
+                      })()
+                  )
+                )
                 , supVista==="uflineales"&&React.createElement(UFLinealesView, { equipo: equipo, info: info })
                 , supVista==="dashboard"&&(
                   React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 320px",gap:22,alignItems:"start"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3774}}
@@ -5858,7 +6065,7 @@ function EditarMetaEquipo({ metaEquipo, setMetaEquipo, premioConecta, setPremioC
 
 // ── Formulario de nuevo cierre (componente propio para poder usar useState) ──
 function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy, crmData, TODAY }) {
-  const [nc, setNc] = React.useState({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", clienteNombre:""});
+  const [nc, setNc] = React.useState({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", isapre:"", clienteNombre:""});
   const [dupWarning, setDupWarning] = React.useState(null); // cliente CRM similar detectado
   const [dupConfirmed, setDupConfirmed] = React.useState(false);
 
@@ -5878,9 +6085,10 @@ function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy, crmData, TOD
   function agregar() {
     const uf = parseFloat(nc.uf);
     if (!uf || uf <= 0) return;
-    if (dupWarning && !dupConfirmed) return; // bloquear si hay duplicado sin confirmar
-    setCierresHoy(cierresHoy.concat([{uf:uf, sexo:nc.sexo, conecta:nc.conecta, origen:nc.origen, clienteNombre:nc.clienteNombre}]));
-    setNc({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", clienteNombre:""});
+    if (nc.origen === "isapre" && !nc.isapre) { window.alert("Por favor selecciona la Isapre de origen."); return; }
+    if (dupWarning && !dupConfirmed) return;
+    setCierresHoy(cierresHoy.concat([{uf:uf, sexo:nc.sexo, conecta:nc.conecta, origen:nc.origen, isapre:nc.isapre||"", clienteNombre:nc.clienteNombre}]));
+    setNc({uf:"", sexo:"hombre", conecta:false, origen:"fonasa", isapre:"", clienteNombre:""});
     setDupWarning(null); setDupConfirmed(false);
   }
   return (
@@ -5930,9 +6138,22 @@ function NuevoCierreForm({ BTN, INP, RD, cierresHoy, setCierresHoy, crmData, TOD
         )
         , React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4489}}
           , React.createElement('label', { style: {fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4490}}, "Origen cliente" )
-          , React.createElement('select', { value: nc.origen, onChange: function(e){setNc(Object.assign({},nc,{origen:e.target.value}));}, style: Object.assign({},INP), __self: this, __source: {fileName: _jsxFileName, lineNumber: 4491}}
-            , React.createElement('option', { value: "fonasa", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4492}}, "🏛 Fonasa" )
-            , React.createElement('option', { value: "isapre", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4493}}, "🏥 Isapre" )
+          , React.createElement('select', { value: nc.origen, onChange: function(e){setNc(Object.assign({},nc,{origen:e.target.value,isapre:""}));}, style: Object.assign({},INP), __self: this, __source: {fileName: _jsxFileName, lineNumber: 4491}}
+            , React.createElement('option', { value: "fonasa"}, "🏛 Fonasa" )
+            , React.createElement('option', { value: "isapre"}, "🏥 Isapre" )
+          )
+        )
+        , nc.origen === "isapre" && React.createElement('div', {style:{gridColumn:"1/-1"}}
+          , React.createElement('label', { style: {fontSize:11,fontWeight:600,color:"#0369A1",display:"block",marginBottom:4}}, "¿De cuál Isapre viene? *" )
+          , React.createElement('select', { value: nc.isapre, onChange: function(e){setNc(Object.assign({},nc,{isapre:e.target.value}));}, style: Object.assign({},INP,{borderColor:"#0369A1"})}
+            , React.createElement('option', { value: ""}, "— Selecciona la Isapre —" )
+            , React.createElement('option', { value: "banmedica-carga"}, "🔵 Banmédica Carga" )
+            , React.createElement('option', { value: "colmena"}, "🟢 Colmena" )
+            , React.createElement('option', { value: "consalud"}, "🟡 Consalud" )
+            , React.createElement('option', { value: "vida-tres"}, "🟠 Vida Tres" )
+            , React.createElement('option', { value: "nueva-masvida"}, "🔴 Nueva Masvida" )
+            , React.createElement('option', { value: "cruz-blanca"}, "⚪ Cruz Blanca" )
+            , React.createElement('option', { value: "esencial"}, "🟣 Esencial" )
           )
         )
         , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,paddingTop:24}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4496}}
