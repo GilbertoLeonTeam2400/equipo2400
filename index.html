@@ -15,11 +15,10 @@
     input[type=number].no-spin::-webkit-inner-spin-button,
     input[type=number].no-spin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
     input[type=number].no-spin{-moz-appearance:textfield;}
-    /* TOP10 responsive: columna en celular, grid en PC */
+    /* TOP10 responsive: columna en celular solo para puestos 4-10, podio se mantiene */
     @media (max-width: 600px) {
       .top10-fila3 { grid-template-columns: 1fr !important; }
       .top10-fila4 { grid-template-columns: 1fr !important; }
-      .top10-podio { flex-direction: column !important; align-items: center !important; }
     }
   </style>
 </head>
