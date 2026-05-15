@@ -3282,6 +3282,7 @@ function SupervisorFotoCard() {
               )
               /* TOP 10 DEL MES — Reconocimiento celebratorio */
               , (function(){
+                try {
                 var top10sorted = equipo.filter(function(v){return v && v.nombre && v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,10);
                 if (top10sorted.length === 0) return null;
 
@@ -3384,6 +3385,7 @@ function SupervisorFotoCard() {
                     )
                   )
                 );
+                } catch(e) { console.error("[TOP10] Error:", e); return null; }
               })()
               /* Eslogan */
               , React.createElement('div', { style: {borderTop:"1px solid rgba(255,255,255,.08)",padding:"14px 22px",textAlign:"center"} }
