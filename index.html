@@ -2385,7 +2385,7 @@ function SupervisorFotoCard() {
                 dps: parseInt(x.dps)   || 0,
                 metaUF: parseFloat(x.metaUF) || 25
               });
-            });
+            }).filter(function(x){ return x && x.nombre && typeof x.nombre === 'string' && x.nombre.trim() !== ''; });
             setEquipo(merged);
             // Cargar fotos desde colección separada para no saturar el doc principal
             if (window.__fbDb && window.__fbDoc && window.__fbGetDoc) {
@@ -2603,14 +2603,15 @@ function SupervisorFotoCard() {
   const [draft,    setDraft]    = useState(null);
 
   //  Computed — todos los reduce usan (||0) para evitar NaN si Firebase trae datos corruptos
-  const totUF   = equipo.reduce(function(s,v){return s+(parseFloat(v.uf)||0);},0);
-  const totDPS  = equipo.reduce(function(s,v){return s+(parseInt(v.dps)||0);},0);
+  const equipoValido = equipo.filter(function(v){ return v && v.nombre && typeof v.nombre === 'string'; });
+  const totUF   = equipoValido.reduce(function(s,v){return s+(parseFloat(v.uf)||0);},0);
+  const totDPS  = equipoValido.reduce(function(s,v){return s+(parseInt(v.dps)||0);},0);
   const metaUFSafe = (isNaN(META_UF)||META_UF<=0) ? 550 : META_UF;
   const falta   = Math.max(0, metaUFSafe - totUF);
-  const xCrack  = equipo.length > 0 ? fmtUF2(falta/equipo.length) : "0";
-  const totHombres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.hombres)||0);},0);},0);
-  const totMujeres = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.mujeres)||0);},0);},0);
-  const totConecta = equipo.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.conecta)||0);},0);},0);
+  const xCrack  = equipoValido.length > 0 ? fmtUF2(falta/equipoValido.length) : "0";
+  const totHombres = equipoValido.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.hombres)||0);},0);},0);
+  const totMujeres = equipoValido.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.mujeres)||0);},0);},0);
+  const totConecta = equipoValido.reduce(function(s,v){return s+(v.rep||[]).reduce(function(a,r){return a+(parseInt(r.conecta)||0);},0);},0);
   const totTitulares = totHombres + totMujeres;
   const pctH = totTitulares > 0 ? Math.round((totHombres/totTitulares)*100) : 0;
   const pctM = totTitulares > 0 ? Math.round((totMujeres/totTitulares)*100) : 0;
@@ -2618,15 +2619,13 @@ function SupervisorFotoCard() {
   const proyEq  = metaUFSafe>0 ? (metaUFSafe/WD_MES)*info.elapsed : 0;
   const pctEq   = proyEq>0?Math.round((totUF/proyEq)*100):0;
   const TODAY   = hoyStr();
-  const ufHoy   = equipo.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseFloat(r.uf)||0);},0);},0);
-  // DPS HOY: suma los dps de todos los reportes enviados hoy
-  const dpsHoy  = equipo.reduce(function(s,v){
+  const ufHoy   = equipoValido.reduce(function(s,v){return s+(v.rep||[]).filter(function(r){return r.fecha===TODAY;}).reduce(function(a,r){return a+(parseFloat(r.uf)||0);},0);},0);
+  const dpsHoy  = equipoValido.reduce(function(s,v){
     var repsHoy = (v.rep||[]).filter(function(r){return r.fecha===TODAY;});
     if (repsHoy.length === 0) return s;
-    // Si hay un reporte de hoy, el campo dps del rep es el DPS declarado ese día
     return s + repsHoy.reduce(function(a,r){return a+(parseInt(r.dps)||0);},0);
   },0);
-  const top5    = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5).map(function(v,i){return {nombre:v.nombre,pos:i+1};});
+  const top5    = equipoValido.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,5).map(function(v,i){return {nombre:v.nombre,pos:i+1};});
 
   // Build last 3 months keys for historial
   const buildMesKey = function(offset) {
@@ -3274,7 +3273,7 @@ function SupervisorFotoCard() {
               )
               /* TOP 10 DEL MES — Reconocimiento celebratorio */
               , (function(){
-                var top10sorted = equipo.filter(function(v){return v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,10);
+                var top10sorted = equipo.filter(function(v){return v && v.nombre && v.uf>0;}).sort(function(a,b){return b.uf-a.uf;}).slice(0,10);
                 if (top10sorted.length === 0) return null;
 
                 var CONFIGS = [
