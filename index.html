@@ -2588,17 +2588,34 @@ function SupervisorFotoCard() {
           // ── MEJORA 2: Backup en Firebase (colección separada) ───────────────
           if (ufTotal > 0) {
             var fbBackupKey = info.mesKey + "_" + ahora.toISOString().slice(0,10);
-            window.__fbSetDoc(window.__fbDoc(window.__fbDb,"backups",fbBackupKey), {
-              timestamp: ahora.toISOString(),
-              mesKey: info.mesKey,
-              ufTotal: ufTotal,
-              equipo: equipo,
-              metaEquipo: safeMetaToSave,
-              ejecutivos: equipo.length
-            }).then(function(){
-              console.log("[BACKUP-FB] ✅ Backup en Firebase guardado:", fbBackupKey);
-            }).catch(function(e){
-              console.warn("[BACKUP-FB] No se pudo guardar en Firebase:", e);
+            // Recopilar CRM de todos los ejecutivos desde Firebase
+            var crmPromises = equipo.map(function(v) {
+              return window.__fbGetDoc(window.__fbDoc(window.__fbDb,"crm",String(v.id)))
+                .then(function(snap){ return {id:v.id, contactos: snap.exists && snap.data() ? (snap.data().contactos||[]) : []}; })
+                .catch(function(){ return {id:v.id, contactos:[]}; });
+            });
+            // Recopilar calendarios de todos los ejecutivos desde localStorage
+            var calData = {};
+            equipo.forEach(function(v){
+              Object.keys(localStorage).filter(function(k){ return k.startsWith("cal_"+v.id+"_"); }).forEach(function(k){
+                try { calData[k] = JSON.parse(localStorage.getItem(k)||"[]"); } catch(e){}
+              });
+            });
+            Promise.all(crmPromises).then(function(crmAll){
+              window.__fbSetDoc(window.__fbDoc(window.__fbDb,"backups",fbBackupKey), {
+                timestamp: ahora.toISOString(),
+                mesKey: info.mesKey,
+                ufTotal: ufTotal,
+                equipo: equipo,
+                metaEquipo: safeMetaToSave,
+                ejecutivos: equipo.length,
+                crm: crmAll,
+                calendarios: calData
+              }).then(function(){
+                console.log("[BACKUP-FB] ✅ Backup completo en Firebase:", fbBackupKey, "| CRM ejecutivos:", crmAll.filter(function(c){return c.contactos.length>0;}).length);
+              }).catch(function(e){
+                console.warn("[BACKUP-FB] Error:", e);
+              });
             });
           }
         })
@@ -4231,9 +4248,20 @@ function SupervisorFotoCard() {
                     // Clave en localStorage para eventos manuales del ejecutivo
                     var calKey = "cal_"+crmVid+"_"+anioHoy+"-"+String(mesHoy+1).padStart(2,"0");
 
-                    // Leer eventos manuales
+                    // Leer eventos manuales — primero localStorage, luego Firebase
                     var eventosMan = [];
                     try { eventosMan = JSON.parse(localStorage.getItem(calKey)||"[]"); } catch(e){}
+                    // Sincronizar desde Firebase si está disponible
+                    if(window.__fbDb&&window.__fbDoc&&window.__fbGetDoc&&eventosMan.length===0){
+                      window.__fbGetDoc(window.__fbDoc(window.__fbDb,"calendarios",crmVid+"_"+anioHoy+"-"+String(mesHoy+1).padStart(2,"0")))
+                        .then(function(snap){
+                          if(snap.exists&&snap.data()&&Array.isArray(snap.data().eventos)&&snap.data().eventos.length>0){
+                            var evsFb = snap.data().eventos;
+                            try { localStorage.setItem(calKey, JSON.stringify(evsFb)); } catch(e){}
+                            setCrmData(crmData.slice()); // forzar re-render
+                          }
+                        }).catch(function(){});
+                    }
 
                     // Eventos de clientes CRM por día
                     var clientesPorDia = {};
@@ -4270,7 +4298,12 @@ function SupervisorFotoCard() {
                       var evNuevo = {id: Date.now(), dia: dia, tipo: tipo.k, desc: desc.trim()};
                       var nuevos = eventosMan.concat([evNuevo]);
                       try { localStorage.setItem(calKey, JSON.stringify(nuevos)); } catch(e){}
-                      // Forzar re-render cambiando algo en el estado
+                      // Guardar también en Firebase
+                      if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
+                        window.__fbSetDoc(window.__fbDoc(window.__fbDb,"calendarios",crmVid+"_"+anioHoy+"-"+String(mesHoy+1).padStart(2,"0")),
+                          {eventos:nuevos, ejecutivoId:crmVid, mes:anioHoy+"-"+String(mesHoy+1).padStart(2,"0"), actualizado:Date.now()}
+                        ).catch(function(){});
+                      }
                       setCrmData(crmData.slice());
                     }
 
@@ -4278,6 +4311,12 @@ function SupervisorFotoCard() {
                       if (!window.confirm("¿Eliminar este evento?")) return;
                       var nuevos = eventosMan.filter(function(e){ return e.id !== evId; });
                       try { localStorage.setItem(calKey, JSON.stringify(nuevos)); } catch(e){}
+                      // Actualizar en Firebase
+                      if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
+                        window.__fbSetDoc(window.__fbDoc(window.__fbDb,"calendarios",crmVid+"_"+anioHoy+"-"+String(mesHoy+1).padStart(2,"0")),
+                          {eventos:nuevos, ejecutivoId:crmVid, mes:anioHoy+"-"+String(mesHoy+1).padStart(2,"0"), actualizado:Date.now()}
+                        ).catch(function(){});
+                      }
                       setCrmData(crmData.slice());
                     }
 
@@ -4565,7 +4604,32 @@ function SupervisorFotoCard() {
                         if (!window.confirm("¿Restaurar backup ["+elegido.tipo+"] del "+fecha2+" con "+elegido.b.ufTotal.toFixed(2)+" UF?\n\nEsto reemplazará los datos actuales.")) return;
                         setEquipo(elegido.b.equipo);
                         if (elegido.b.metaEquipo && !isNaN(elegido.b.metaEquipo) && elegido.b.metaEquipo > 0) setMetaEquipo(elegido.b.metaEquipo);
-                        alert("✅ Backup restaurado correctamente.");
+                        // Restaurar CRM si está incluido en el backup
+                        if (elegido.b.crm && Array.isArray(elegido.b.crm)) {
+                          elegido.b.crm.forEach(function(item){
+                            if (item.contactos && item.contactos.length > 0) {
+                              storageSet("crm_"+item.id, item.contactos);
+                              if(window.__fbDb&&window.__fbDoc&&window.__fbSetDoc){
+                                window.__fbSetDoc(window.__fbDoc(window.__fbDb,"crm",String(item.id)),
+                                  {contactos:item.contactos, actualizado:Date.now()}
+                                ).catch(function(){});
+                              }
+                            }
+                          });
+                          var totalClientes = elegido.b.crm.reduce(function(s,c){return s+c.contactos.length;},0);
+                          if (totalClientes > 0) console.log("[RESTORE] CRM restaurado:", totalClientes, "clientes");
+                        }
+                        // Restaurar calendarios si están incluidos
+                        if (elegido.b.calendarios) {
+                          Object.keys(elegido.b.calendarios).forEach(function(k){
+                            var evs = elegido.b.calendarios[k];
+                            if (evs && evs.length > 0) {
+                              try { localStorage.setItem(k, JSON.stringify(evs)); } catch(e){}
+                            }
+                          });
+                          console.log("[RESTORE] Calendarios restaurados:", Object.keys(elegido.b.calendarios).length, "claves");
+                        }
+                        alert("✅ Backup restaurado correctamente.\nEquipo, CRM y calendarios recuperados.");
                       }, style: {background:"#FEF3C7",color:"#92400E",border:"1px solid #FCD34D",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}, "🔄 Restaurar Backup")
                     , React.createElement('button', {
                         onClick: function(){
