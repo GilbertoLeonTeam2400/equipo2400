@@ -2409,9 +2409,14 @@ function SupervisorFotoCard() {
             });
             console.log("[LOAD] Firebase datos recibidos OK");
             merged = merged.map(function(x){
+              var reps = x.rep || [];
+              // Recalcular v.uf desde rep[] — fuente única de verdad
+              var ufDesdeReps = parseFloat(reps.reduce(function(s,r){return s+(parseFloat(r.uf)||0);},0).toFixed(2));
+              var dpsDesdeReps = reps.reduce(function(s,r){return s+(parseInt(r.dps)||0);},0);
+              // Si tiene reportes, usar suma de reps; si no, usar el valor guardado
               return Object.assign({rep:[]}, x, {
-                uf:  parseFloat(x.uf)  || 0,
-                dps: parseInt(x.dps)   || 0,
+                uf:  reps.length > 0 ? ufDesdeReps : (parseFloat(x.uf)||0),
+                dps: reps.length > 0 ? dpsDesdeReps : (parseInt(x.dps)||0),
                 metaUF: parseFloat(x.metaUF) || 25
               });
             }).filter(function(x){ return x && x.nombre && typeof x.nombre === 'string' && x.nombre.trim() !== ''; });
@@ -2881,10 +2886,31 @@ function SupervisorFotoCard() {
     };
     const nuevoEquipo = equipo.map(function(v){
       if(v.id!==id) return v;
+      // Combinar reportes: si ya existe uno de hoy, reemplazarlo; si no, agregarlo
+      var repsAnteriores = (v.rep||[]).filter(function(r){ return r.fecha !== TODAY; });
+      var repHoyAnterior = (v.rep||[]).find(function(r){ return r.fecha === TODAY; });
+      // Si ya había reporte hoy, sumar los cierres (puede haber reportado varias veces)
+      var nuevoRepFinal = repHoyAnterior ? Object.assign({}, repHoyAnterior, {
+        uf:        parseFloat((repHoyAnterior.uf + ufTotal).toFixed(2)),
+        dps:       (repHoyAnterior.dps||0) + dps,
+        cierres:   (repHoyAnterior.cierres||0) + cierresHoy.length,
+        hombres:   (repHoyAnterior.hombres||0) + homTotal,
+        mujeres:   (repHoyAnterior.mujeres||0) + mujTotal,
+        conecta:   (repHoyAnterior.conecta||0) + conTotal,
+        fonasa:    (repHoyAnterior.fonasa||0) + fonasaTotal,
+        isapre:    (repHoyAnterior.isapre||0) + isapraTotal,
+        contactos: (repHoyAnterior.contactos||0) + (parseInt(form.contactos)||0),
+        cot:       (repHoyAnterior.cot||0) + (parseInt(form.cot)||0),
+        detalleCierres: (repHoyAnterior.detalleCierres||[]).concat(cierresHoy),
+      }) : nuevoRep;
+      var todosReps = repsAnteriores.concat([nuevoRepFinal]);
+      // v.uf = suma de TODOS los rep[].uf — fuente única de verdad, nunca se desincroniza
+      var ufRecalculado = parseFloat(todosReps.reduce(function(s,r){return s+(parseFloat(r.uf)||0);},0).toFixed(2));
+      var dpsRecalculado = todosReps.reduce(function(s,r){return s+(parseInt(r.dps)||0);},0);
       return Object.assign({},v,{
-        uf: parseFloat((v.uf+ufTotal).toFixed(2)),
-        dps: v.dps+dps,
-        rep: (v.rep||[]).concat([nuevoRep])
+        uf:  ufRecalculado,
+        dps: dpsRecalculado,
+        rep: todosReps
       });
     });
     setEquipo(nuevoEquipo);
