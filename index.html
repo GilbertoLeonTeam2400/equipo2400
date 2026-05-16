@@ -7940,382 +7940,212 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
   var totalMeta        = comisionMeta + totalPremiosMeta;
 
   return (
-    React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4759}}
-      /* Header */
-      , React.createElement('div', { style: {background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"22px 24px",color:"#fff",marginBottom:20}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4761}}
-        , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4762}}, "Simulador de ingresos"  )
-        , React.createElement('div', { style: {fontSize:22,fontWeight:900}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4763}}, "💰 ¿Cuánto ganaré este mes de "      , info.mes.split(" ")[0], "?")
-        , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.7)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4764}}, "Elige tu meta y comprométete con ella."      )
+    React.createElement('div', null
+
+      /* ── HEADER ── */
+      , React.createElement('div', { style:{background:"linear-gradient(135deg,"+RD+","+R+")",borderRadius:16,padding:"22px 24px",color:"#fff",marginBottom:20} }
+        , React.createElement('div', { style:{fontSize:11,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:4} }, "Mi Meta de este Mes")
+        , React.createElement('div', { style:{fontSize:22,fontWeight:900} }, "💰 ¿Cuánto ganaré en ", info.mes.split(" ")[0], "?")
+        , React.createElement('div', { style:{fontSize:13,color:"rgba(255,255,255,.7)",marginTop:4} }, "Elige tu meta, simula tus ganancias y comprométete.")
       )
 
-      /* Login */
-      , !pinOk && (
-        React.createElement('div', { style: {background:"#fff",borderRadius:16,padding:"24px",border:"1.5px solid rgba(233,7,41,.2)",marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4769}}
-          , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:RD,marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4770}}, "Selecciona tu nombre e ingresa tu PIN"      )
-          , React.createElement('select', { value: selId, onChange: function(e){setSelId(e.target.value);setPinOk(false);setPinCal("");setPinErr(false);},
-            style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:14,marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4771}}
-            , React.createElement('option', { value: "", __self: this, __source: {fileName: _jsxFileName, lineNumber: 4773}}, "Selecciona tu nombre"  )
-            , equipo.map(function(e){return React.createElement('option', { key: e.id, value: e.id, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4774}}, e.nombre);})
-          )
-          , selId && (
-            React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4777}}
-              , React.createElement('input', { type: "password", value: pinCal, placeholder: "Tu PIN" ,
-                onChange: function(e){setPinCal(e.target.value);setPinErr(false);},
-                onKeyDown: function(e){if(e.key==="Enter")loginCal();},
-                style: {width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:18,textAlign:"center",letterSpacing:"0.4em",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4778}} )
-              , pinErr && React.createElement('div', { style: {color:R,fontSize:13,marginBottom:8,fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4782}}, "PIN incorrecto" )
-              , React.createElement('button', { onClick: loginCal, style: {width:"100%",padding:"12px",background:RD,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4783}}, "Ingresar")
-            )
-          )
+      /* ── LOGIN ── */
+      , !pinOk && React.createElement('div', { style:{background:"#fff",borderRadius:16,padding:"24px",border:"1.5px solid rgba(233,7,41,.2)",marginBottom:16} }
+        , React.createElement('div', { style:{fontSize:14,fontWeight:700,color:RD,marginBottom:12} }, "Selecciona tu nombre e ingresa tu PIN")
+        , React.createElement('select', { value:selId, onChange:function(e){setSelId(e.target.value);setPinOk(false);setPinCal("");setPinErr(false);},
+            style:{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:14,marginBottom:10} }
+          , React.createElement('option', { value:"" }, "Selecciona tu nombre")
+          , equipo.map(function(e){ return React.createElement('option', {key:e.id,value:e.id}, e.nombre); })
+        )
+        , selId && React.createElement('div', null
+          , React.createElement('input', { type:"password", placeholder:"Tu PIN personal", value:pinCal,
+              onChange:function(e){setPinCal(e.target.value);},
+              onKeyDown:function(e){if(e.key==="Enter")loginCal();},
+              style:{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #E5E7EB",fontSize:14,marginBottom:10,boxSizing:"border-box"} })
+          , React.createElement('button', { onClick:loginCal,
+              style:{width:"100%",padding:"12px",background:R,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"} },
+              "Entrar →")
+          , pinErr && React.createElement('div', { style:{color:R,fontSize:13,marginTop:8,textAlign:"center"} }, "PIN incorrecto. Intenta de nuevo.")
         )
       )
 
-      , pinOk && v && (
-        React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 4790}}
-          /* ── SECCIÓN PRINCIPAL: Tu meta del mes ── */
-          , React.createElement('div', { style: {background:"linear-gradient(135deg,#1D4ED8,#1e40af)",borderRadius:20,padding:"28px 26px",marginBottom:20,boxShadow:"0 8px 32px rgba(29,78,216,.3)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4792}}
-            , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4793}}, "🎯 Tu compromiso del mes"    )
-            , React.createElement('div', { style: {fontSize:16,fontWeight:900,color:"#FCD34D",marginBottom:20,lineHeight:1.3}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4794}}, "¡Estas son las UF que merezco — voy por ellas!"
+      /* ── LOGGED IN: 2 CARDS ── */
+      , pinOk && v && (function(){
+          // ── Calcular antigüedad y premio ──
+          var mesesAnt = null;
+          if (v.fechaIngreso) {
+            var p = v.fechaIngreso.split("-");
+            if (p.length >= 2) {
+              var ing = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]||1));
+              var hoy2 = new Date();
+              mesesAnt = (hoy2.getFullYear()-ing.getFullYear())*12 + (hoy2.getMonth()-ing.getMonth());
+            }
+          }
+          var grupo = mesesAnt===null ? null : mesesAnt<=12 ? "novato" : mesesAnt<=35 ? "desarrollo" : "veterano";
+          var tabla = grupo && tablaPremios && tablaPremios[grupo] ? tablaPremios[grupo] : null;
+          function calcPremio(uf) {
+            if (!tabla) return 0;
+            for (var i=tabla.length-1;i>=0;i--) { if (uf>=tabla[i].desde) return tabla[i].monto; }
+            return 0;
+          }
+          var cantConecta = premios[0] ? (premios[0].cantidad||0) : 0;
+          var montoConUnitario = premioConecta||100000;
+          var imgIdx = mesesAnt===null ? null : mesesAnt<=12 ? 1 : mesesAnt<=35 ? 2 : 3;
+          var imgPremio = premiosImgs && imgIdx!==null && premiosImgs[imgIdx] ? premiosImgs[imgIdx] : null;
 
-            )
-            , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4797}}
-              , React.createElement('div', { style: {background:"rgba(255,255,255,.1)",borderRadius:16,padding:"20px 18px",textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4798}}
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4799}}, "UF que voy a lograr"    )
-                , React.createElement('input', { type: "number", step: "0.5", min: "0", value: ufMeta,
-                  onChange: function(e){setUfMeta(parseFloat(e.target.value)||0);},
-                  style: {fontSize:"clamp(28px,10vw,64px)",fontWeight:900,color:"#FCD34D",border:"none",borderBottom:"3px solid rgba(252,211,77,.5)",outline:"none",width:"100%",background:"transparent",textAlign:"center",MozAppearance:"textfield",WebkitAppearance:"none"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4800}} )
-                , React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4803}}, "UF este mes"  )
+          // ── Datos reales ──
+          var ufReal = v.uf || 0;
+          var comReal = calcComision(ufReal);
+          var premioReal = calcPremio(ufReal);
+          var conectaReal = (v.rep||[]).reduce(function(s,r){return s+(r.conecta||0);},0);
+          var totalReal = comReal + premioReal + (conectaReal * montoConUnitario);
+
+          // ── Simulación ──
+          var ufSim2 = ufSim || ufMeta || v.metaUF || 0;
+          var comSim = calcComision(ufSim2);
+          var premioSim = calcPremio(ufSim2);
+          var totalSim = comSim + premioSim + (cantConecta * montoConUnitario);
+
+          // ── Siguiente tramo ──
+          var siguienteTramo = null;
+          if (tabla) {
+            for (var j=0;j<tabla.length;j++) {
+              if (tabla[j].desde > ufSim2 && tabla[j].monto > premioSim) { siguienteTramo=tabla[j]; break; }
+            }
+          }
+          var ufFaltan = siguienteTramo ? parseFloat((siguienteTramo.desde - ufSim2).toFixed(2)) : 0;
+
+          // ── Tendencia ──
+          var ritmo = info.elapsed > 0 ? ufReal/info.elapsed : 0;
+          var proyFin = ritmo * info.wdTotal;
+          var tendTxt = proyFin >= (v.metaUF||ufMeta) ? "↗️ ¡Vas en camino a tu meta!" : proyFin >= (v.metaUF||ufMeta)*0.7 ? "➡️ Ritmo ajustado — accelera esta semana" : "↘️ Hay que acelerar para alcanzar la meta";
+          var tendColor = proyFin >= (v.metaUF||ufMeta) ? "#4ADE80" : proyFin >= (v.metaUF||ufMeta)*0.7 ? "#FCD34D" : "#FCA5A5";
+
+          return React.createElement('div', null
+
+            /* ══ CARD 1: Lo que puedes ganar ══ */
+            , React.createElement('div', { style:{background:"linear-gradient(135deg,#1a0533,#2d0a4e)",borderRadius:20,padding:"26px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(90,20,120,.3)"} }
+
+              , React.createElement('div', { style:{fontSize:12,color:"rgba(200,150,255,.8)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "🎯 Si llegas a tu meta")
+              , React.createElement('div', { style:{fontSize:17,fontWeight:900,color:"#E9D5FF",marginBottom:20} }, "¿Cuánto puedes ganar este mes?")
+
+              /* Meta y Conecta */
+              , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20} }
+                , React.createElement('div', { style:{background:"rgba(255,255,255,.08)",borderRadius:14,padding:"16px"} }
+                  , React.createElement('div', { style:{fontSize:11,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:8} }, "🎯 Mi meta en UF")
+                  , React.createElement('div', { style:{display:"flex",alignItems:"center",gap:8} }
+                    , React.createElement('input', { type:"number", min:"0", max:"200", step:"0.5", value:ufMeta,
+                        onChange:function(e){var v2=parseFloat(e.target.value)||0;setUfMeta(v2);setUfSim(v2);},
+                        style:{width:"80px",padding:"8px",borderRadius:8,border:"1.5px solid rgba(200,150,255,.4)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:18,fontWeight:900,textAlign:"center",fontFamily:"inherit"} })
+                    , React.createElement('span', { style:{color:"rgba(255,255,255,.5)",fontSize:13} }, "UF")
+                  )
+                  , React.createElement('button', { onClick:guardarMeta, style:{marginTop:8,background:"rgba(200,150,255,.2)",color:"#E9D5FF",border:"1px solid rgba(200,150,255,.3)",borderRadius:8,padding:"5px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"inherit"} },
+                    metaGuardada ? "✅ Guardada" : "💾 Guardar meta")
+                )
+                , React.createElement('div', { style:{background:"rgba(110,231,183,.1)",borderRadius:14,padding:"16px",border:"1px solid rgba(110,231,183,.2)"} }
+                  , React.createElement('div', { style:{fontSize:11,color:"rgba(110,231,183,.7)",textTransform:"uppercase",marginBottom:8} }, "💚 Plan Conecta")
+                  , React.createElement('div', { style:{display:"flex",alignItems:"center",gap:8} }
+                    , React.createElement('input', { type:"number", min:"0", max:"50", step:"1", value:cantConecta,
+                        onChange:function(e){var cant=parseInt(e.target.value)||0;setPremios([{id:1,nombre:nombrePremio||"Plan Conecta",valorUnitario:montoConUnitario,cantidad:cant}]);},
+                        style:{width:"60px",padding:"8px",borderRadius:8,border:"1.5px solid rgba(110,231,183,.4)",background:"rgba(255,255,255,.1)",color:"#6EE7B7",fontSize:18,fontWeight:900,textAlign:"center",fontFamily:"inherit"} })
+                    , React.createElement('span', { style:{color:"rgba(110,231,183,.6)",fontSize:12} }, "contratos")
+                  )
+                  , React.createElement('div', { style:{fontSize:10,color:"rgba(110,231,183,.5)",marginTop:4} }, fmt(montoConUnitario)+" c/u")
+                )
               )
-              , React.createElement('div', { style: {background:"rgba(252,211,77,.15)",borderRadius:16,padding:"20px 18px",textAlign:"center",border:"2px solid rgba(252,211,77,.4)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4805}}
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4806}}, "Lo que ganaré"  )
-                , React.createElement('div', { style: {fontSize:"clamp(15px,4.5vw,28px)",fontWeight:900,color:"#FCD34D",lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4807}}, fmt(totalMeta))
-                , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginTop:4}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4808}}, "comisión + premios"  )
+
+              /* Imagen del premio */
+              , imgPremio && React.createElement('div', { style:{borderRadius:12,overflow:"hidden",marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,.4)"} }
+                , React.createElement('img', { src:imgPremio.data||imgPremio, alt:"Premio", style:{width:"100%",display:"block",objectFit:"contain",background:"#fff",maxHeight:300} })
               )
+
+              /* Desglose y Total */
+              , React.createElement('div', { style:{background:"rgba(255,255,255,.06)",borderRadius:14,padding:"18px",marginBottom:16} }
+                , React.createElement('div', { style:{fontSize:11,color:"rgba(200,150,255,.7)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14} }, "💰 Desglose de ganancias")
+                , React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:8,marginBottom:16} }
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Comisión ("+fmtUF2(ufSim2)+" UF)")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#fff"} }, fmt(comSim))
+                  )
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Premio antigüedad")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#C9A84C"} }, premioSim>0 ? fmt(premioSim) : "Sin tramo aún")
+                  )
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Plan Conecta ("+cantConecta+" contratos)")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#6EE7B7"} }, cantConecta>0 ? fmt(cantConecta*montoConUnitario) : "—")
+                  )
+                )
+                , React.createElement('div', { style:{borderTop:"1px solid rgba(200,150,255,.2)",paddingTop:14,textAlign:"center"} }
+                  , React.createElement('div', { style:{fontSize:11,color:"rgba(200,150,255,.6)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6} }, "🏆 TOTAL REMUNERACIÓN ESTIMADA")
+                  , React.createElement('div', { style:{fontSize:"clamp(28px,7vw,42px)",fontWeight:900,color:"#E9D5FF",lineHeight:1} }, fmt(totalSim))
+                )
+              )
+
+              /* Motivacional */
+              , siguienteTramo
+                ? React.createElement('div', { style:{background:"rgba(74,222,128,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(74,222,128,.3)"} }
+                  , React.createElement('div', { style:{fontSize:13,fontWeight:900,color:"#4ADE80",marginBottom:4} }, "🚀 ¡Cierra "+fmtUF2(ufFaltan)+" UF más y sube de tramo!")
+                  , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.7)"} }, "Llegarías a $"+siguienteTramo.monto.toLocaleString("es-CL")+" de premio adicional. ¡Vale la pena! 💪")
+                )
+                : premioSim > 0 && React.createElement('div', { style:{background:"rgba(252,211,77,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(252,211,77,.3)",textAlign:"center"} }
+                  , React.createElement('div', { style:{fontSize:14,fontWeight:900,color:"#FCD34D"} }, "🏆 ¡Tramo máximo alcanzado! Sigue así, CRACK 🌟")
+                )
             )
-            /* Premio Plan Conecta - dentro del compromiso */
-            , premios.map(function(p){
-              return (
-                React.createElement('div', { key: p.id, style: {background:"rgba(255,255,255,.1)",borderRadius:14,padding:"14px 16px",marginBottom:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4814}}
-                  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4815}}
-                    , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4816}}, p.nombre)
-                    , React.createElement('div', { style: {fontSize:18,fontWeight:900,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4817}}, fmt(p.valorUnitario*(p.cantidad||0)))
+
+            /* ══ CARD 2: Lo que llevas a la fecha ══ */
+            , React.createElement('div', { style:{background:"linear-gradient(135deg,#064E3B,#065F46)",borderRadius:20,padding:"26px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(6,78,59,.3)"} }
+
+              , React.createElement('div', { style:{fontSize:12,color:"rgba(110,231,183,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "📊 A la fecha — día "+info.elapsed+"/"+info.wdTotal)
+              , React.createElement('div', { style:{fontSize:17,fontWeight:900,color:"#6EE7B7",marginBottom:20} }, "Lo que ya tienes ganado")
+
+              /* UF real grande */
+              , React.createElement('div', { style:{textAlign:"center",marginBottom:20} }
+                , React.createElement('div', { style:{fontSize:11,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:4} }, "UF cerradas este mes")
+                , React.createElement('div', { style:{fontSize:"clamp(48px,12vw,72px)",fontWeight:900,color:"#6EE7B7",lineHeight:1} }, fmtUF2(ufReal))
+                , React.createElement('div', { style:{fontSize:13,color:"rgba(255,255,255,.5)",marginTop:4} }, "de "+(v.metaPropia||v.metaUF||ufMeta)+" UF comprometidas")
+              )
+
+              /* Desglose real */
+              , React.createElement('div', { style:{background:"rgba(255,255,255,.06)",borderRadius:14,padding:"18px",marginBottom:16} }
+                , React.createElement('div', { style:{fontSize:11,color:"rgba(110,231,183,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14} }, "💰 Remuneración actual")
+                , React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:8,marginBottom:16} }
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Comisión")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#fff"} }, fmt(comReal))
                   )
-                  , React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:8}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4819}}, fmt(p.valorUnitario), " por plan · "    , p.cantidad||0, " planes" )
-                  , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4820}}
-                    , React.createElement('button', { onClick: function(){var arr=premios.map(function(x){return x.id===p.id?Object.assign({},x,{cantidad:Math.max(0,(x.cantidad||0)-1)}):x;});setPremios(arr);},
-                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#fff"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4821}}, "−")
-                    , React.createElement('div', { style: {fontSize:26,fontWeight:900,color:"#FCD34D",minWidth:40,textAlign:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4823}}, p.cantidad||0)
-                    , React.createElement('button', { onClick: function(){var arr=premios.map(function(x){return x.id===p.id?Object.assign({},x,{cantidad:(x.cantidad||0)+1}):x;});setPremios(arr);},
-                      style: {background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:36,height:36,fontSize:20,cursor:"pointer",fontWeight:700,color:"#FCD34D"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4824}}, "+")
-                    , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4826}}, "planes Conecta" )
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Premio antigüedad")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#C9A84C"} }, premioReal>0 ? fmt(premioReal) : "Sin tramo aún")
+                  )
+                  , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center"} }
+                    , React.createElement('span', { style:{fontSize:13,color:"rgba(255,255,255,.6)"} }, "Plan Conecta ("+conectaReal+" logrados)")
+                    , React.createElement('span', { style:{fontSize:14,fontWeight:800,color:"#6EE7B7"} }, conectaReal>0 ? fmt(conectaReal*montoConUnitario) : "—")
                   )
                 )
-              );
-            })
-            , React.createElement('button', { onClick: guardarMeta,
-              style: {width:"100%",padding:"16px",background:metaGuardada?"#16A34A":"rgba(252,211,77,.9)",color:metaGuardada?"#fff":"#1D4ED8",border:"none",borderRadius:12,fontSize:16,fontWeight:900,cursor:"pointer",transition:"all .3s"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4831}}
-              , metaGuardada?"✅ ¡Meta guardada! El supervisor ya puede verla":"💾 Guardar mi meta del mes"
+                , React.createElement('div', { style:{borderTop:"1px solid rgba(110,231,183,.2)",paddingTop:14,textAlign:"center"} }
+                  , React.createElement('div', { style:{fontSize:11,color:"rgba(110,231,183,.6)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6} }, "🏆 TOTAL REMUNERACIÓN HOY")
+                  , React.createElement('div', { style:{fontSize:"clamp(28px,7vw,42px)",fontWeight:900,color:"#6EE7B7",lineHeight:1} }, fmt(totalReal))
+                )
+              )
+
+              /* Texto de incentivo / tendencia */
+              , React.createElement('div', { style:{background:"rgba(255,255,255,.07)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(110,231,183,.15)"} }
+                , React.createElement('div', { style:{fontSize:14,fontWeight:900,color:tendColor,marginBottom:4} }, tendTxt)
+                , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.6)"} },
+                  info.left > 0
+                    ? "Proyección al cierre: "+fmtUF2(proyFin)+" UF — quedan "+info.left+" días hábiles"
+                    : "¡Mes completado!"
+                )
+              )
+
+              /* Cerrar sesión */
+              , React.createElement('button', { onClick:function(){setPinOk(false);setSelId("");setPinCal("");},
+                  style:{width:"100%",padding:"12px",background:"rgba(255,255,255,.08)",color:"rgba(255,255,255,.6)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,fontSize:13,cursor:"pointer",fontWeight:600,marginTop:16,fontFamily:"inherit"} },
+                  "Cerrar sesión")
             )
-          )
-
-
-          /* ── CARD 2: Lo que has logrado ── */
-          , React.createElement('div', { style: {background:"linear-gradient(135deg,#064E3B,#065F46)",borderRadius:20,padding:"28px 26px",marginBottom:20,boxShadow:"0 8px 32px rgba(6,78,59,.3)"} },
-            React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:8} }, "📊 Lo que llevas logrado"),
-            React.createElement('div', { style: {fontSize:16,fontWeight:900,color:"#6EE7B7",marginBottom:20,lineHeight:1.3} }, "Tu avance real este mes"),
-            (function(){
-              // UF por semana desde reportes
-              var reps = v.rep || [];
-              var ufTotal = v.uf || 0;
-              var metasSem = v.metasSemanas || [Math.round(v.metaUF*0.25),Math.round(v.metaUF*0.25),Math.round(v.metaUF*0.25),Math.round(v.metaUF*0.25)];
-              // Conecta logrados
-              var conectaLogrado = reps.reduce(function(s,r){return s+(r.conecta||0);},0);
-              var conectaComprometido = premios[0]&&premios[0].cantidad>0 ? premios[0].cantidad : (v.metaConecta||0);
-              // UF por semana real (agrupar reportes por semana del mes)
-              var ufPorSemana = [0,0,0,0];
-              reps.forEach(function(r) {
-                if (!r.fecha) return;
-                var pts = r.fecha.split("/"); // dd/mm/yyyy
-                var dia = parseInt(pts[0],10);
-                if (!dia) return;
-                var sem = dia<=7?0:dia<=14?1:dia<=21?2:3;
-                ufPorSemana[sem] += r.uf||0;
-              });
-              var semColors = ["#3B82F6","#8B5CF6","#F59E0B","#16A34A"];
-              return React.createElement('div', null,
-                React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16} },
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.1)",borderRadius:16,padding:"20px 18px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8} }, "UF logradas"),
-                    React.createElement('div', { style: {fontSize:52,fontWeight:900,color:"#6EE7B7",lineHeight:1} }, fmtUF2(ufTotal)),
-                    React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4} }, "de "+ufMeta+" comprometidas")
-                  ),
-                  React.createElement('div', { style: {background:"rgba(110,231,183,.15)",borderRadius:16,padding:"20px 18px",textAlign:"center",border:"2px solid rgba(110,231,183,.4)"} },
-                    React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4} }, "Remuneración Lograda"),
-                    React.createElement('div', { style: {fontSize:"clamp(15px,4.5vw,26px)",fontWeight:900,color:"#6EE7B7",lineHeight:1,whiteSpace:"nowrap"} }, fmt(calcComision(ufTotal))),
-                    React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginTop:4} }, "según UF cerradas")
-                  )
-                ),
-                React.createElement('div', { style: {background:"rgba(255,255,255,.08)",borderRadius:14,padding:"14px 16px",marginBottom:12} },
-                  React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:10,fontWeight:700,textTransform:"uppercase"} }, "UF por semana logradas"),
-                  React.createElement('div', { style: {display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8} },
-                    [0,1,2,3].map(function(si){
-                      var ufSem = parseFloat(ufPorSemana[si].toFixed(2));
-                      var metaSem = metasSem[si]||0;
-                      var pct = metaSem>0?Math.min(100,Math.round((ufSem/metaSem)*100)):0;
-                      return React.createElement('div',{key:si,style:{textAlign:"center",background:"rgba(255,255,255,.08)",borderRadius:10,padding:"8px 4px"}},
-                        React.createElement('div',{style:{fontSize:9,color:"rgba(255,255,255,.5)",marginBottom:4}},"Sem "+(si+1)),
-                        React.createElement('div',{style:{fontSize:16,fontWeight:900,color:semColors[si]}},fmtUF2(ufSem)),
-                        React.createElement('div',{style:{fontSize:9,color:"rgba(255,255,255,.4)"}},pct+"%")
-                      );
-                    })
-                  )
-                ),
-                React.createElement('div', { style: {background:"rgba(255,255,255,.08)",borderRadius:14,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"} },
-                  React.createElement('div', null,
-                    React.createElement('div',{style:{fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",fontWeight:700}},"Plan Conecta logrados"),
-                    React.createElement('div',{style:{fontSize:24,fontWeight:900,color:"#6EE7B7",marginTop:2}},conectaLogrado)
-                  ),
-                  React.createElement('div',{style:{textAlign:"right"}},
-                    React.createElement('div',{style:{fontSize:11,color:"rgba(255,255,255,.6)",textTransform:"uppercase",fontWeight:700}},"Comprometidos"),
-                    React.createElement('div',{style:{fontSize:24,fontWeight:900,color:"rgba(255,255,255,.5)",marginTop:2}},conectaComprometido)
-                  )
-                )
-              );
-            })()
-          )
-
-          /* ── CARD 3: Velocidad de cierre semanal ── */
-          , (function(){
-              var reps = v.rep || [];
-              var hoyDate = new Date();
-              var diaHoy = hoyDate.getDate();
-              var semActual = diaHoy<=7?0:diaHoy<=14?1:diaHoy<=21?2:3;
-              var semAnterior = semActual > 0 ? semActual - 1 : null;
-              var limSem = [[1,7],[8,14],[15,21],[22,31]];
-              function ufEnSem(s) {
-                if (s === null) return null;
-                var lim = limSem[s];
-                return reps.filter(function(r){
-                  if (!r.fecha) return false;
-                  var pts = r.fecha.split("/");
-                  var dia = parseInt(pts[0],10);
-                  return dia >= lim[0] && dia <= lim[1];
-                }).reduce(function(sum,r){return sum+(r.uf||0);},0);
-              }
-              var ufEsta = ufEnSem(semActual);
-              var ufAnterior = ufEnSem(semAnterior);
-              var diff = semAnterior !== null ? ufEsta - ufAnterior : null;
-              var mejora = diff !== null && diff > 0;
-              var igual = diff !== null && Math.abs(diff) < 0.01;
-              var semLabel = ["1ª","2ª","3ª","4ª"];
-              return React.createElement('div', { style: {background:"linear-gradient(135deg,#1e1b4b,#312e81)",borderRadius:20,padding:"22px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(49,46,129,.3)"} },
-                React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "⚡ Velocidad de cierre"),
-                React.createElement('div', { style: {fontSize:15,fontWeight:900,color:"#A5B4FC",marginBottom:16} }, "¿Voy mejor o peor que la semana pasada?"),
-                React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14} },
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.1)",borderRadius:14,padding:"16px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:6} }, "Esta semana ("+semLabel[semActual]+")"),
-                    React.createElement('div', { style: {fontSize:38,fontWeight:900,color:"#A5B4FC",lineHeight:1} }, fmtUF2(ufEsta)),
-                    React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.4)",marginTop:4} }, "UF cerradas")
-                  ),
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:14,padding:"16px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:6} }, semAnterior!==null ? "Semana pasada ("+semLabel[semAnterior]+")" : "Sin semana anterior aún"),
-                    React.createElement('div', { style: {fontSize:38,fontWeight:900,color:"rgba(255,255,255,.4)",lineHeight:1} }, semAnterior!==null ? fmtUF2(ufAnterior) : "—"),
-                    React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.4)",marginTop:4} }, "UF cerradas")
-                  )
-                ),
-                diff !== null && React.createElement('div', { style: {background: igual?"rgba(255,255,255,.1)":mejora?"rgba(74,222,128,.15)":"rgba(252,165,165,.15)", borderRadius:12, padding:"12px 16px", border:"1px solid "+(igual?"rgba(255,255,255,.2)":mejora?"rgba(74,222,128,.4)":"rgba(252,165,165,.4)"), textAlign:"center"} },
-                  React.createElement('div', { style: {fontSize:22,fontWeight:900,color:igual?"#fff":mejora?"#4ADE80":"#FCA5A5"} },
-                    igual ? "➡️ Ritmo igual" : (mejora?"📈 ":"📉 ")+(mejora?"+":"")+fmtUF2(diff)+" UF "+( mejora?"más que la semana pasada":"menos que la semana pasada")
-                  ),
-                  React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginTop:4} },
-                    mejora ? "¡Vas acelerando! Mantén ese ritmo 💪" : igual ? "Semana pareja — toca acelerar" : "Esta semana bajó el ritmo — ¡a reactivar!"
-                  )
-                )
-              );
-            })()
-
-          /* ── CARD 4: Proyección de cierre del mes ── */
-          , (function(){
-              var ufTotal = v.uf || 0;
-              var metaUF = v.metaUF || ufMeta || 1;
-              var diasTotales = info.elapsed + info.left;
-              var ritmoActual = info.elapsed > 0 ? ufTotal / info.elapsed : 0;
-              var proyeccion = ritmoActual * diasTotales;
-              var pct = Math.round((ufTotal / metaUF) * 100);
-              var proyPct = Math.min(Math.round((proyeccion / metaUF) * 100), 200);
-              var llegaAMeta = proyeccion >= metaUF;
-              var diferencia = proyeccion - metaUF;
-              var colorSemaforo = llegaAMeta ? "#4ADE80" : pct >= 60 ? "#FCD34D" : "#FCA5A5";
-              var bgSemaforo = llegaAMeta ? "rgba(74,222,128,.15)" : pct >= 60 ? "rgba(252,211,77,.12)" : "rgba(252,165,165,.12)";
-              var emoji = llegaAMeta ? "🟢" : pct >= 60 ? "🟡" : "🔴";
-              return React.createElement('div', { style: {background:"linear-gradient(135deg,#1c1917,#292524)",borderRadius:20,padding:"22px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(0,0,0,.3)"} },
-                React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "🔮 Proyección al cierre del mes"),
-                React.createElement('div', { style: {fontSize:15,fontWeight:900,color:"#FCD34D",marginBottom:16} }, "Con tu ritmo actual, ¿llegas a la meta?"),
-                React.createElement('div', { style: {background:bgSemaforo, border:"1px solid "+colorSemaforo+"55", borderRadius:16, padding:"20px", textAlign:"center", marginBottom:14} },
-                  React.createElement('div', { style: {fontSize:42,marginBottom:8} }, emoji),
-                  React.createElement('div', { style: {fontSize:"clamp(28px,8vw,48px)",fontWeight:900,color:colorSemaforo,lineHeight:1,marginBottom:6} }, fmtUF2(proyeccion)+" UF"),
-                  React.createElement('div', { style: {fontSize:13,color:"rgba(255,255,255,.6)",marginBottom:10} }, "proyección a fin de mes con tu ritmo actual"),
-                  React.createElement('div', { style: {fontSize:14,fontWeight:700,color:colorSemaforo} },
-                    llegaAMeta
-                      ? "✅ Vas a "+( diferencia>0?"superar":"cumplir exacto")+" tu meta"+(diferencia>0?" por "+fmtUF2(diferencia)+" UF extra!":"!")
-                      : "⚠️ Faltan "+fmtUF2(Math.abs(diferencia))+" UF para llegar — ¡acelera!"
-                  )
-                ),
-                React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10} },
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:12,padding:"12px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:18,fontWeight:900,color:"#FCD34D"} }, fmtUF2(ritmoActual)),
-                    React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, "UF/día actual")
-                  ),
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:12,padding:"12px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:18,fontWeight:900,color:"#FCD34D"} }, info.left),
-                    React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, "Días que quedan")
-                  ),
-                  React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:12,padding:"12px",textAlign:"center"} },
-                    React.createElement('div', { style: {fontSize:18,fontWeight:900,color:llegaAMeta?"#4ADE80":"#FCA5A5"} },
-                      llegaAMeta ? fmtUF2(ritmoActual) : fmtUF2(info.left>0?Math.max(0,metaUF-ufTotal)/info.left:0)
-                    ),
-                    React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, llegaAMeta?"UF/día suficiente":"UF/día necesario")
-                  )
-                )
-              );
-            })()
-
-          /* ── CARD 5: Tasa de conversión DPS → Cierre ── */
-          , (function(){
-              var reps = v.rep || [];
-              var totalDPS = reps.reduce(function(s,r){return s+(r.dps||0);},0);
-              var totalCierres = reps.reduce(function(s,r){return s+(r.cierres||0);},0);
-              var totalContactos = reps.reduce(function(s,r){return s+(r.contactos||0);},0);
-              var tasaDPS = totalDPS > 0 ? Math.round((totalCierres/totalDPS)*100) : 0;
-              var tasaContacto = totalContactos > 0 ? Math.round((totalCierres/totalContactos)*100) : 0;
-              var colorTasa = tasaDPS >= 40 ? "#4ADE80" : tasaDPS >= 20 ? "#FCD34D" : totalDPS > 0 ? "#FCA5A5" : "#9CA3AF";
-              return React.createElement('div', { style: {background:"linear-gradient(135deg,#0c1445,#162056)",borderRadius:20,padding:"22px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(12,20,69,.4)"} },
-                React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "📐 Calidad de mi gestión"),
-                React.createElement('div', { style: {fontSize:15,fontWeight:900,color:"#93C5FD",marginBottom:16} }, "¿Cuántas DPS se convierten en cierres?"),
-                totalDPS === 0
-                  ? React.createElement('div', { style: {textAlign:"center",padding:"20px",color:"rgba(255,255,255,.4)",fontSize:13} }, "Registra DPS y cierres para ver tu tasa de conversión")
-                  : React.createElement('div', null,
-                      React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:14} },
-                        React.createElement('div', { style: {background:"rgba(255,255,255,.08)",borderRadius:12,padding:"14px",textAlign:"center"} },
-                          React.createElement('div', { style: {fontSize:28,fontWeight:900,color:"#93C5FD"} }, totalContactos),
-                          React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, "Contactos")
-                        ),
-                        React.createElement('div', { style: {background:"rgba(255,255,255,.08)",borderRadius:12,padding:"14px",textAlign:"center"} },
-                          React.createElement('div', { style: {fontSize:28,fontWeight:900,color:"#86EFAC"} }, totalDPS),
-                          React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, "DPS tomadas")
-                        ),
-                        React.createElement('div', { style: {background:"rgba(255,255,255,.08)",borderRadius:12,padding:"14px",textAlign:"center"} },
-                          React.createElement('div', { style: {fontSize:28,fontWeight:900,color:"#FCD34D"} }, totalCierres),
-                          React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.4)",textTransform:"uppercase",marginTop:4} }, "Cierres")
-                        )
-                      ),
-                      React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12} },
-                        React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:14,padding:"16px",textAlign:"center",border:"1px solid "+colorTasa+"44"} },
-                          React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginBottom:6,textTransform:"uppercase"} }, "DPS → Cierre"),
-                          React.createElement('div', { style: {fontSize:42,fontWeight:900,color:colorTasa,lineHeight:1} }, tasaDPS+"%"),
-                          React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.4)",marginTop:6} },
-                            tasaDPS>=40 ? "🏆 Excelente conversión" : tasaDPS>=20 ? "👍 Conversión normal" : "📈 Hay que mejorar el cierre"
-                          )
-                        ),
-                        React.createElement('div', { style: {background:"rgba(255,255,255,.07)",borderRadius:14,padding:"16px",textAlign:"center"} },
-                          React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.5)",marginBottom:6,textTransform:"uppercase"} }, "Contacto → Cierre"),
-                          React.createElement('div', { style: {fontSize:42,fontWeight:900,color:"#93C5FD",lineHeight:1} }, tasaContacto+"%"),
-                          React.createElement('div', { style: {fontSize:10,color:"rgba(255,255,255,.4)",marginTop:6} }, totalContactos+" contactos este mes")
-                        )
-                      )
-                    )
-              );
-            })()
-
-          /* ── CARD 6: Premio por Antigüedad + Total Remuneración ── */
-          , (function(){
-              var mesesAnt = null;
-              if (v.fechaIngreso) {
-                var p = v.fechaIngreso.split("-");
-                if (p.length >= 2) {
-                  var ing = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]||1));
-                  var hoy2 = new Date();
-                  mesesAnt = (hoy2.getFullYear()-ing.getFullYear())*12 + (hoy2.getMonth()-ing.getMonth());
-                }
-              }
-              var grupo = mesesAnt === null ? null : mesesAnt <= 12 ? "novato" : mesesAnt <= 35 ? "desarrollo" : "veterano";
-              var grupoLabel = mesesAnt === null ? "Sin fecha de ingreso registrada" : mesesAnt <= 12 ? "🟣 Novato (0-12 meses)" : mesesAnt <= 35 ? "🔵 En desarrollo (13-35 meses)" : "🏅 Veterano (36+ meses)";
-              var imgIdx = mesesAnt === null ? null : mesesAnt <= 12 ? 1 : mesesAnt <= 35 ? 2 : 3;
-              var tabla = grupo && tablaPremios && tablaPremios[grupo] ? tablaPremios[grupo] : null;
-              function calcPremio(uf, tab) {
-                if (!tab) return 0;
-                for (var i = tab.length-1; i >= 0; i--) { if (uf >= tab[i].desde) return tab[i].monto; }
-                return 0;
-              }
-              var ufActual = v.uf || 0;
-              var premioAnt = tabla ? calcPremio(ufActual, tabla) : 0;
-              var cantConecta = premios[0] ? (premios[0].cantidad||0) : 0;
-              var montoConecta = (premioConecta||100000) * cantConecta;
-              var comActual = calcComision(ufActual);
-              var totalRem = comActual + premioAnt + montoConecta;
-              var siguienteTramo = null;
-              if (tabla) { for (var j=0;j<tabla.length;j++) { if (tabla[j].desde > ufActual && tabla[j].monto > premioAnt) { siguienteTramo=tabla[j]; break; } } }
-              var ufFaltan = siguienteTramo ? parseFloat((siguienteTramo.desde - ufActual).toFixed(2)) : 0;
-              var ganarMas = siguienteTramo ? siguienteTramo.monto - premioAnt : 0;
-              var imgPremio = premiosImgs && imgIdx !== null && premiosImgs[imgIdx] ? premiosImgs[imgIdx] : null;
-              return React.createElement("div", { style:{background:"linear-gradient(135deg,#3D1A00,#5C2800)",borderRadius:20,padding:"24px 22px",marginBottom:20,boxShadow:"0 8px 32px rgba(201,168,76,.25)"} }
-                , React.createElement("div", { style:{fontSize:12,color:"rgba(201,168,76,.7)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:4} }, "🏆 Tu Premio este Mes")
-                , React.createElement("div", { style:{fontSize:15,fontWeight:900,color:"#C9A84C",marginBottom:16} }, grupoLabel)
-                , imgPremio && React.createElement("div", { style:{borderRadius:14,overflow:"hidden",marginBottom:18,boxShadow:"0 4px 16px rgba(0,0,0,.3)"} }
-                  , React.createElement("img", { src:imgPremio.data||imgPremio, alt:"Premio", style:{width:"100%",display:"block",objectFit:"contain",background:"#fff",maxHeight:360} })
-                )
-                , React.createElement("div", { style:{background:"rgba(201,168,76,.12)",borderRadius:14,padding:"18px",marginBottom:16,border:"1px solid rgba(201,168,76,.3)"} }
-                  , React.createElement("div", { style:{fontSize:11,color:"rgba(201,168,76,.7)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,textAlign:"center"} }, "💰 Total Remuneración del Mes")
-                  , React.createElement("div", { style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14} }
-                    , React.createElement("div", { style:{textAlign:"center",background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 6px"} }
-                      , React.createElement("div", { style:{fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:4} }, "Comisión")
-                      , React.createElement("div", { style:{fontSize:13,fontWeight:900,color:"#fff"} }, fmt(comActual))
-                    )
-                    , React.createElement("div", { style:{textAlign:"center",background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 6px"} }
-                      , React.createElement("div", { style:{fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:4} }, "Premio antigüedad")
-                      , React.createElement("div", { style:{fontSize:13,fontWeight:900,color:"#C9A84C"} }, premioAnt > 0 ? fmt(premioAnt) : "Sin tramo aún")
-                    )
-                    , React.createElement("div", { style:{textAlign:"center",background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 6px"} }
-                      , React.createElement("div", { style:{fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginBottom:4} }, "Plan Conecta")
-                      , React.createElement("div", { style:{fontSize:13,fontWeight:900,color:"#6EE7B7"} }, montoConecta > 0 ? fmt(montoConecta) : "—")
-                    )
-                  )
-                  , React.createElement("div", { style:{borderTop:"1px solid rgba(201,168,76,.25)",paddingTop:14,textAlign:"center"} }
-                    , React.createElement("div", { style:{fontSize:10,color:"rgba(201,168,76,.7)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6} }, "🏆 TOTAL REMUNERACIÓN")
-                    , React.createElement("div", { style:{fontSize:"clamp(26px,7vw,40px)",fontWeight:900,color:"#FCD34D",lineHeight:1} }, fmt(totalRem))
-                  )
-                )
-                , siguienteTramo
-                  ? React.createElement("div", { style:{background:"rgba(74,222,128,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(74,222,128,.3)"} }
-                    , React.createElement("div", { style:{fontSize:14,fontWeight:900,color:"#4ADE80",marginBottom:6} }, "🚀 ¡Estás muy cerca del siguiente tramo!")
-                    , React.createElement("div", { style:{fontSize:13,color:"rgba(255,255,255,.8)",lineHeight:1.7} }
-                      , "Solo te faltan ", React.createElement("span",{style:{fontWeight:900,color:"#FCD34D"}}, fmtUF2(ufFaltan)+" UF"),
-                      " para alcanzar el tramo de ", React.createElement("span",{style:{fontWeight:900,color:"#FCD34D"}}, siguienteTramo.desde+" UF"),
-                      " y ganar ", React.createElement("span",{style:{fontWeight:900,color:"#4ADE80"}}, fmt(ganarMas)+" adicionales"),
-                      ". ¡Ese esfuerzo extra vale mucho! 💪"
-                    )
-                  )
-                  : premioAnt > 0
-                    ? React.createElement("div", { style:{background:"rgba(252,211,77,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(252,211,77,.3)",textAlign:"center"} }
-                      , React.createElement("div",{style:{fontSize:16,fontWeight:900,color:"#FCD34D"}},"🏆 ¡Estás en el tramo máximo!")
-                      , React.createElement("div",{style:{fontSize:13,color:"rgba(255,255,255,.7)",marginTop:4}},"Ya alcanzaste el premio máximo de tu categoría. ¡Sigue así, CRACK! 🌟")
-                    )
-                    : tabla && React.createElement("div", { style:{background:"rgba(252,165,165,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(252,165,165,.3)"} }
-                      , React.createElement("div",{style:{fontSize:14,fontWeight:900,color:"#FCA5A5",marginBottom:6}},"💡 ¡Activa tu premio!")
-                      , React.createElement("div",{style:{fontSize:13,color:"rgba(255,255,255,.8)",lineHeight:1.7}}
-                        , "Cierra ", React.createElement("span",{style:{fontWeight:900,color:"#FCD34D"}},tabla[1]?tabla[1].desde+"+ UF":"más UF"),
-                        " este mes para activar tu primer premio por antigüedad. ¡Tú puedes! 🔥"
-                      )
-                    )
-              );
-            })()
-
-          , React.createElement('button', { onClick: function(){setPinOk(false);setSelId("");setPinCal("");},
-            style: {width:"100%",padding:"12px",background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",fontWeight:600}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 4838}}, "Cerrar sesión"
-
-          )
-        )
-      )
+          );
+        })()
     )
   );
 }
