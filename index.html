@@ -5753,7 +5753,7 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
 
                 , supVista==="editar"&&React.createElement(EditarDatosView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3770}} )
                 , supVista==="meta"&&React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:18} },
-                  React.createElement(MetasIndividualesView, { equipo: equipo, setEquipo: setEquipo, setMetaEquipo: setMetaEquipo }),
+                  React.createElement(MetasIndividualesView, { equipo: equipo, setEquipo: setEquipo, setMetaEquipo: setMetaEquipo, info: info }),
                   React.createElement(EditarMetaEquipo, { metaEquipo: metaEquipo, setMetaEquipo: setMetaEquipo, premioConecta: premioConecta, setPremioConecta: setPremioConecta, nombrePremio: nombrePremio, setNombrePremio: setNombrePremio })
                 )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
@@ -7019,7 +7019,7 @@ function UFLinealesView({ equipo, info }) {
 
 
 // ── Agentes en 0 ─────────────────────────────────────────────────
-function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo }) {
+function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
   var RD = "#C41230", R = "#E9192A";
   var [saved, setSaved] = useState(false);
   var [metas, setMetas] = useState(function() {
