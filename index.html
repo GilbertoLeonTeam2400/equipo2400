@@ -8012,7 +8012,24 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
           var cantConecta = premios[0] ? (premios[0].cantidad||0) : 0;
           var montoConUnitario = premioConecta||100000;
           var imgIdx = mesesAnt===null ? null : mesesAnt<=12 ? 1 : mesesAnt<=35 ? 2 : 3;
-          var imgPremio = premiosImgs && imgIdx!==null && premiosImgs[imgIdx] ? premiosImgs[imgIdx] : null;
+          // Try to get image from premiosImgs, also try localStorage as fallback
+          var imgPremio = null;
+          if (imgIdx !== null) {
+            if (premiosImgs && premiosImgs[imgIdx]) {
+              imgPremio = premiosImgs[imgIdx];
+            } else if (premiosImgs && premiosImgs.length > 0) {
+              // Use last available image as fallback
+              imgPremio = premiosImgs[Math.min(imgIdx, premiosImgs.length-1)];
+            } else {
+              // Try localStorage
+              try {
+                var mesKey2 = new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0");
+                var cached = JSON.parse(localStorage.getItem("PREMIOS_"+mesKey2)||"[]");
+                if (cached[imgIdx]) imgPremio = cached[imgIdx];
+                else if (cached.length > 0) imgPremio = cached[Math.min(imgIdx, cached.length-1)];
+              } catch(e) {}
+            }
+          }
 
           // ── Datos reales ──
           var ufReal = v.uf || 0;
@@ -8048,7 +8065,6 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
             , React.createElement('div', { style:{background:"linear-gradient(135deg,#1a0008,#3d0010,#6B0018)",borderRadius:20,padding:"26px 24px",marginBottom:20,boxShadow:"0 8px 32px rgba(196,18,48,.3)"} }
 
               , React.createElement('div', { style:{fontSize:12,color:"rgba(255,200,200,.8)",textTransform:"uppercase",letterSpacing:"0.2em",marginBottom:6} }, "🎯 "+v.nombre.split(" ")[0]+", si llegas a tu meta")
-              , React.createElement('div', { style:{fontSize:17,fontWeight:900,color:"#FFF0F0",marginBottom:20} }, "¿Cuánto puedes ganar este mes?")
               , React.createElement('div', { style:{fontSize:17,fontWeight:900,color:"#FFF0F0",marginBottom:20} }, "¿Cuánto puedes ganar este mes?")
 
               /* Meta y Conecta */
@@ -8100,7 +8116,10 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
                 )
                 , React.createElement('div', { style:{borderTop:"1px solid rgba(255,150,150,.2)",paddingTop:14,textAlign:"center"} }
                   , React.createElement('div', { style:{fontSize:11,color:"rgba(255,200,200,.6)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6} }, "🏆 TOTAL REMUNERACIÓN ESTIMADA")
-                  , React.createElement('div', { style:{fontSize:"clamp(28px,7vw,42px)",fontWeight:900,color:"#FFF0F0",lineHeight:1} }, fmt(totalSim))
+                  , React.createElement('div', { style:{fontSize:"clamp(28px,7vw,42px)",fontWeight:900,lineHeight:1,
+                      background:"linear-gradient(135deg,#FFD700,#C9A84C,#FFF3A0,#C9A84C)",
+                      WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+                      filter:"drop-shadow(0 2px 8px rgba(201,168,76,.5))"} }, fmt(totalSim))
                 )
               )
 
