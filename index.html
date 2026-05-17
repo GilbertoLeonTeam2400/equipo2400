@@ -2613,6 +2613,257 @@ function ClasificacionAGVView({ equipo, info, R, RD }) {
   );
 }
 
+// ── Cargar Reporte DPS (supervisor) ──────────────────────────────────────────
+function DpsReportView({ equipo, setEquipo, info, R, RD }) {
+  var [msg, setMsg] = React.useState("");
+  var [preview, setPreview] = React.useState([]);
+  var [cargando, setCargando] = React.useState(false);
+
+  function handleFile(e) {
+    var file = e.target.files[0]; if(!file) return;
+    setCargando(true); setMsg("⏳ Leyendo archivo...");
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var filas = [];
+        if (window.XLSX) {
+          var wb = window.XLSX.read(ev.target.result, {type:"binary"});
+          // Buscar la pestaña "Resumen Agentes" específicamente
+          var sheetName = wb.SheetNames.find(function(s){
+            return s.toLowerCase().replace(/\s/g,"").indexOf("resumenagente") >= 0 ||
+                   s.toLowerCase().replace(/\s/g,"").indexOf("agente") >= 0;
+          }) || wb.SheetNames[0];
+          console.log("[DPS] Pestaña usada:", sheetName, "| Disponibles:", wb.SheetNames);
+          var ws = wb.Sheets[sheetName];
+          filas = window.XLSX.utils.sheet_to_json(ws, {defval:""});
+        }
+        if (!filas.length) { setMsg("❌ No se encontraron datos."); setCargando(false); return; }
+
+        // Mostrar columnas detectadas para debug
+        var cols = Object.keys(filas[0]);
+        console.log("[DPS] Columnas:", cols);
+
+        // Filtrar solo CC=2400
+        var miEquipo = filas.filter(function(f){
+          var cc = String(f.CC||f.cc||f["C.C"]||f["CC."]||"").trim();
+          return cc === "2400";
+        });
+
+        if (miEquipo.length === 0) {
+          setMsg("⚠️ No se encontraron filas con CC=2400. Columnas detectadas: "+cols.slice(0,8).join(", "));
+          setCargando(false); return;
+        }
+
+        // Mapear columnas del reporte de administración
+        var mapeados = miEquipo.map(function(f){
+          var nombre = String(
+            f["NOMBRE EJECUTIVO"]||f["Nombre Ejecutivo"]||f.nombre||f.NOMBRE||""
+          ).trim().toUpperCase();
+
+          // Nombres exactos del reporte "Resumen Agentes" de administración
+          var dpsConVenta  = parseInt(String(
+            f["DPS c/ ven"]||f["DPS c/ven"]||f["DPS c/venta"]||f["DPS c/ venta"]||
+            f["DPS_C_VENTA"]||f["DPS CON VENTA"]||"0")) || 0;
+          var dpsSinVenta  = parseInt(String(
+            f["DPS sin ven"]||f["DPS sin venta"]||f["DPS sin ven "]||
+            f["DPS_SIN_VENTA"]||f["DPS SIN VENTA"]||"0")) || 0;
+          var dpsPendiente = parseInt(String(
+            f["DPS Pendien te"]||f["DPS Pendiente"]||f["DPS Pendien"]||f["DPS\nPendien\nte"]||
+            f["DPS_PENDIENTE"]||f["DPS PENDIENTE"]||"0")) || 0;
+          var dpsRechazado = parseInt(String(
+            f["Rechaz adi"]||f["Rechaz"]||f["Rechazado"]||f["Rechaz\nadi"]||
+            f["DPS Rechaz"]||f["DPS_RECHAZADO"]||f["DPS RECHAZADO"]||"0")) || 0;
+          var dpsTotal     = parseInt(String(
+            f["Total DP"]||f["Total DPS"]||f["TOTAL DPS"]||f["Total\nDP"]||
+            f["total_dps"]||"0")) || 0;
+          var uf = parseFloat(String(
+            f["UF Dif"]||f["UF"]||f["uf"]||"0").replace(",",".")) || 0;
+
+          return { nombre:nombre, dpsConVenta:dpsConVenta, dpsSinVenta:dpsSinVenta, dpsPendiente:dpsPendiente, dpsRechazado:dpsRechazado, dpsTotal:dpsTotal, uf:uf };
+        }).filter(function(f){ return f.nombre.length > 0; });
+
+        setPreview(mapeados);
+        setMsg("✅ "+mapeados.length+" ejecutivos encontrados en CC=2400. Revisa la preview y confirma.");
+        setCargando(false);
+      } catch(err) {
+        setMsg("❌ Error: "+err.message);
+        setCargando(false);
+      }
+    };
+    reader.onerror = function(){ setMsg("❌ No se pudo leer el archivo."); setCargando(false); };
+    if (!window.XLSX) {
+      var script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      script.onload = function(){ reader.readAsBinaryString(file); };
+      document.head.appendChild(script);
+    } else { reader.readAsBinaryString(file); }
+  }
+
+  function confirmarCarga() {
+    if (!preview.length) return;
+    var mesKey = info.mesKey;
+    var nuevoEquipo = equipo.map(function(v){
+      var palabrasV = v.nombre.toUpperCase().split(/\s+/);
+      var match = preview.find(function(p){
+        var palabrasP = p.nombre.split(/\s+/).filter(function(x){return x.length>1;});
+        var hits = palabrasP.filter(function(w){ return v.nombre.toUpperCase().indexOf(w)>=0; }).length;
+        return hits >= Math.max(1, Math.floor(palabrasP.length*0.5));
+      });
+      if (!match) return v;
+      var hist = Object.assign({}, v.historial||{});
+      var mes = Object.assign({uf:0,dps:0,dpsVenta:0,dpsSinVenta:0,dpsPendiente:0,dpsRechazado:0}, hist[mesKey]||{});
+      mes.dpsVenta    = match.dpsConVenta;
+      mes.dpsSinVenta  = match.dpsSinVenta;
+      mes.dpsPendiente = match.dpsPendiente;
+      mes.dpsRechazado = match.dpsRechazado;
+      mes.dps = match.dpsTotal || (match.dpsConVenta + match.dpsSinVenta + match.dpsPendiente + match.dpsRechazado);
+      if (match.uf > 0) mes.uf = match.uf;
+      hist[mesKey] = mes;
+      return Object.assign({}, v, {historial:hist});
+    });
+    setEquipo(nuevoEquipo);
+    setPreview([]);
+    // Guardar en Firebase
+    if (window.__fbDb&&window.__fbDoc&&window.__fbSetDoc)
+      window.__fbSetDoc(window.__fbDoc(window.__fbDb,"equipos",mesKey),{equipo:nuevoEquipo})
+        .then(function(){ setMsg("✅ ¡Guardado en Firebase! DPS actualizadas para "+info.mes+"."); })
+        .catch(function(e){ setMsg("⚠️ Actualizado localmente pero error en Firebase: "+e.message); });
+    else setMsg("✅ Actualizado localmente. Reconecta Firebase para sincronizar.");
+  }
+
+  return React.createElement('div', {style:{background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)"}}
+    , React.createElement('div', {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "📊 Cargar Reporte DPS de Administración")
+    , React.createElement('div', {style:{fontSize:12,color:"#6B7280",marginBottom:16}},
+      "Sube el reporte Excel tal como lo recibes de administración. Se filtrará automáticamente CC=2400 y se actualizarán DPS c/venta, sin venta, pendientes y rechazadas del mes "+info.mes+".")
+    // Aviso columnas esperadas
+    , React.createElement('div', {style:{background:"#EFF6FF",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:12,color:"#1D4ED8"}}
+      , React.createElement('div', {style:{fontWeight:700,marginBottom:4}}, "📋 Columnas que se leen del reporte:")
+      , React.createElement('div', null, "CC · NOMBRE EJECUTIVO · DPS c/venta · DPS sin venta · DPS Pendiente · Rechaz · Total DP · UF Dif")
+    )
+    // Subir archivo
+    , React.createElement('label', {style:{display:"inline-flex",alignItems:"center",gap:8,background:R,color:"#fff",borderRadius:10,padding:"12px 22px",cursor:"pointer",fontWeight:700,fontSize:14,marginBottom:16}}
+      , "📎 Seleccionar reporte Excel"
+      , React.createElement('input', {type:"file",accept:".xlsx,.xls,.csv",style:{display:"none"},onChange:handleFile})
+    )
+    , msg && React.createElement('div', {style:{background:"#F0FDF4",borderRadius:10,padding:"10px 16px",marginBottom:16,fontSize:12,color:"#15803D",fontWeight:600}}, msg)
+    // Preview
+    , preview.length > 0 && React.createElement('div', null
+      , React.createElement('div', {style:{fontWeight:800,color:"#374151",marginBottom:10}}, "Vista previa — "+preview.length+" ejecutivos detectados:")
+      , React.createElement('div', {style:{overflowX:"auto"}}
+        , React.createElement('table', {style:{width:"100%",borderCollapse:"collapse",fontSize:12}}
+          , React.createElement('thead', null
+            , React.createElement('tr', {style:{background:"#F8FAFC"}}
+              , ["Nombre","DPS c/venta","DPS sin venta","Pendientes","Rechazadas","Total DPS","UF"].map(function(h){
+                  return React.createElement('th',{key:h,style:{padding:"8px 10px",textAlign:"left",fontWeight:700,color:"#6B7280",fontSize:11}},h);
+                })
+            )
+          )
+          , React.createElement('tbody', null
+            , preview.map(function(p,i){
+                return React.createElement('tr',{key:i,style:{borderTop:"1px solid #F3F4F6",background:i%2===0?"#fff":"#FAFBFF"}}
+                  , React.createElement('td',{style:{padding:"6px 10px",fontWeight:700,color:"#374151"}},p.nombre)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#16A34A",fontWeight:800,textAlign:"center"}},p.dpsConVenta)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#2563EB",fontWeight:800,textAlign:"center"}},p.dpsSinVenta)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#D97706",fontWeight:800,textAlign:"center"}},p.dpsPendiente)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#DC2626",fontWeight:800,textAlign:"center"}},p.dpsRechazado)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#374151",textAlign:"center"}},p.dpsTotal)
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#7C3AED",fontWeight:800,textAlign:"center"}},p.uf||"—")
+                );
+              })
+          )
+        )
+      )
+      , React.createElement('button', {onClick:confirmarCarga,
+          style:{marginTop:16,background:"#16A34A",color:"#fff",border:"none",borderRadius:12,padding:"12px 28px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}
+        , "💾 Confirmar y guardar para todos")
+    )
+  );
+}
+
+// ── Análisis DPS (supervisor) ─────────────────────────────────────────────────
+function DpsAnalisisView({ equipo, info, R, RD }) {
+  var mesKey = info.mesKey;
+  var datos = equipo.map(function(v){
+    var h = (v.historial||{})[mesKey]||{};
+    return {
+      nombre: v.nombre,
+      dpsConVenta:  parseInt(h.dpsVenta)||0,
+      dpsSinVenta:  parseInt(h.dpsSinVenta)||0,
+      dpsPendiente: parseInt(h.dpsPendiente)||0,
+      dpsRechazado: parseInt(h.dpsRechazado)||0,
+      dpsTotal:     (parseInt(h.dpsVenta)||0)+(parseInt(h.dpsSinVenta)||0)+(parseInt(h.dpsPendiente)||0)+(parseInt(h.dpsRechazado)||0),
+    };
+  }).filter(function(d){ return d.dpsTotal > 0; }).sort(function(a,b){ return b.dpsTotal-a.dpsTotal; });
+
+  var totConVenta  = datos.reduce(function(s,d){return s+d.dpsConVenta;},0);
+  var totSinVenta  = datos.reduce(function(s,d){return s+d.dpsSinVenta;},0);
+  var totPendiente = datos.reduce(function(s,d){return s+d.dpsPendiente;},0);
+  var totRechazado = datos.reduce(function(s,d){return s+d.dpsRechazado;},0);
+  var totTotal     = totConVenta+totSinVenta+totPendiente+totRechazado;
+  var tasaCierre   = totTotal>0?Math.round((totConVenta/totTotal)*100):0;
+
+  return React.createElement('div', {style:{background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)"}}
+    , React.createElement('div', {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "🔵 Análisis DPS — "+info.mes)
+    , React.createElement('div', {style:{fontSize:12,color:"#6B7280",marginBottom:20}}, "Solo muestra ejecutivos con datos DPS cargados este mes.")
+    // KPI resumen
+    , React.createElement('div', {style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:24}}
+      , [
+          {l:"Con Venta",  v:totConVenta,  c:"#16A34A", bg:"#F0FDF4"},
+          {l:"Sin Venta",  v:totSinVenta,  c:"#2563EB", bg:"#EFF6FF"},
+          {l:"Pendientes", v:totPendiente, c:"#D97706", bg:"#FFFBEB"},
+          {l:"Rechazadas", v:totRechazado, c:"#DC2626", bg:"#FFF1F2"},
+          {l:"Tasa cierre",v:tasaCierre+"%",c:tasaCierre>=50?"#16A34A":tasaCierre>=30?"#D97706":"#DC2626",bg:"#F8FAFC"},
+        ].map(function(k){
+          return React.createElement('div',{key:k.l,style:{background:k.bg,borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #E5E7EB"}}
+            , React.createElement('div',{style:{fontSize:22,fontWeight:900,color:k.c}},k.v)
+            , React.createElement('div',{style:{fontSize:10,color:"#6B7280",textTransform:"uppercase",marginTop:4}},k.l)
+          );
+        })
+    )
+    // Tabla por ejecutivo
+    , datos.length === 0
+      ? React.createElement('div',{style:{textAlign:"center",padding:"40px",color:"#9CA3AF"}},"Sin datos DPS para "+info.mes+". Carga el reporte desde la pestaña 📊 Cargar Reporte DPS.")
+      : React.createElement('div',{style:{overflowX:"auto"}}
+        , React.createElement('table',{style:{width:"100%",borderCollapse:"collapse",fontSize:12}}
+          , React.createElement('thead',null
+            , React.createElement('tr',{style:{background:"#F8FAFC",borderBottom:"2px solid #E5E7EB"}}
+              , ["Ejecutivo","✅ Con Venta","🔵 Sin Venta","🟡 Pendientes","🔴 Rechazadas","Total","Tasa Cierre"].map(function(h){
+                  return React.createElement('th',{key:h,style:{padding:"10px 12px",textAlign:"left",fontSize:11,color:"#6B7280",fontWeight:700}},h);
+                })
+            )
+          )
+          , React.createElement('tbody',null
+            , datos.map(function(d,i){
+                var tasa = d.dpsTotal>0?Math.round((d.dpsConVenta/d.dpsTotal)*100):0;
+                return React.createElement('tr',{key:i,style:{borderTop:"1px solid #F3F4F6",background:i%2===0?"#fff":"#FAFBFF"}}
+                  , React.createElement('td',{style:{padding:"10px 12px",fontWeight:700,color:RD,fontSize:12}},d.nombre)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#16A34A"}},d.dpsConVenta)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#2563EB"}},d.dpsSinVenta)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#D97706"}},d.dpsPendiente)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#DC2626"}},d.dpsRechazado)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:700,color:"#374151"}},d.dpsTotal)
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center"}}
+                    , React.createElement('span',{style:{background:tasa>=50?"#DCFCE7":tasa>=30?"#FEF9C3":"#FEE2E2",color:tasa>=50?"#16A34A":tasa>=30?"#92400E":"#DC2626",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}},tasa+"%")
+                  )
+                );
+              })
+            , React.createElement('tr',{style:{borderTop:"3px solid #E5E7EB",background:"#F8FAFC",fontWeight:900}}
+              , React.createElement('td',{style:{padding:"10px 12px",color:RD,fontSize:12}},"TOTAL EQUIPO")
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",color:"#16A34A"}},totConVenta)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",color:"#2563EB"}},totSinVenta)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",color:"#D97706"}},totPendiente)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",color:"#DC2626"}},totRechazado)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",color:"#374151"}},totTotal)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center"}}
+                , React.createElement('span',{style:{background:tasaCierre>=50?"#DCFCE7":tasaCierre>=30?"#FEF9C3":"#FEE2E2",color:tasaCierre>=50?"#16A34A":tasaCierre>=30?"#92400E":"#DC2626",borderRadius:99,padding:"3px 10px",fontSize:12,fontWeight:900}},tasaCierre+"%")
+              )
+            )
+          )
+        )
+      )
+  );
+}
+
 // ── Gestionar Premios (supervisor) ──────────────────────────────────────────
 function GestPremiosView({ premiosImgs, setPremiosImgs, info, R, RD, tablaPremios, setTablaPremios, premioConecta, setPremioConecta, TABLA_DEFAULT }) {
   var mesKey = info.mesKey;
@@ -3417,10 +3668,10 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
   // Map group -> sub-tabs
   const SUP_GRUPOS = {
     dashboard: [["dashboard","📊 Dashboard"],["calEjec","📅 Calendario Ejecutivos"]],
-    equipo:    [["gestion","👥 Gestionar Equipo"],["carga","📥 Cargar UF/DPS"],["editar","✏️ Editar Estadísticas"]],
+    equipo:    [["gestion","👥 Gestionar Equipo"],["carga","📥 Cargar UF/DPS"],["editar","✏️ Editar Estadísticas"],["dpsreport","📊 Cargar Reporte DPS"]],
     metas:     [["meta","🎯 Meta del Equipo"],["uflineales","📈 UF's Lineales"]],
     contenido: [["gestPremios","🏆 Gestionar Premios"],["gestDocs","📂 Gestionar Docs"],["excel","📂 Carga Excel"]],
-    analisis:  [["clasificacion","📊 Clasificación AGV"],["agentes0","🚨 Agentes en 0"]],
+    analisis:  [["clasificacion","📊 Clasificación AGV"],["agentes0","🚨 Agentes en 0"],["dpsanalisis","🔵 Análisis DPS"]],
   };
   const [bulk,     setBulk]     = useState({});
   const [bulkOk,   setBulkOk]   = useState(false);
@@ -3560,6 +3811,13 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
   const equipoValido = equipo.filter(function(v){ return v && v.nombre && typeof v.nombre === 'string'; });
   const totUF   = equipoValido.reduce(function(s,v){return s+(parseFloat(v.uf)||0);},0);
   const totDPS  = equipoValido.reduce(function(s,v){return s+(parseInt(v.dps)||0);},0);
+  // DPS KPIs — desde historial del mes actual
+  const totDpsConVenta    = equipoValido.reduce(function(s,v){var h=(v.historial||{})[info.mesKey];return s+(h?parseInt(h.dpsVenta)||0:0);},0);
+  const totDpsSinVenta    = equipoValido.reduce(function(s,v){var h=(v.historial||{})[info.mesKey];return s+(h?parseInt(h.dpsSinVenta)||0:0);},0);
+  const totDpsPendiente   = equipoValido.reduce(function(s,v){var h=(v.historial||{})[info.mesKey];return s+(h?parseInt(h.dpsPendiente)||0:0);},0);
+  const totDpsRechazado   = equipoValido.reduce(function(s,v){var h=(v.historial||{})[info.mesKey];return s+(h?parseInt(h.dpsRechazado)||0:0);},0);
+  const totDpsTotal       = totDpsConVenta + totDpsSinVenta + totDpsPendiente + totDpsRechazado;
+  const tasaCierreDPS     = totDpsTotal > 0 ? Math.round((totDpsConVenta/totDpsTotal)*100) : 0;
   const metaUFSafe = (isNaN(META_UF)||META_UF<=0) ? 550 : META_UF;
   const falta   = Math.max(0, metaUFSafe - totUF);
   const xCrack  = equipoValido.length > 0 ? fmtUF2(falta/equipoValido.length) : "0";
@@ -4339,6 +4597,30 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                   )
                 )
               )
+              /* ── DPS PIPELINE KPIs ── */
+              , totDpsTotal > 0 && React.createElement('div', { style:{background:"rgba(255,255,255,.04)",borderRadius:14,padding:"16px 18px",marginBottom:16,border:"1px solid rgba(99,179,237,.2)"} }
+                , React.createElement('div', { style:{fontSize:9,color:"rgba(99,179,237,.8)",textTransform:"uppercase",letterSpacing:"0.18em",marginBottom:12,fontWeight:700} }, "🔵 PIPELINE DPS — ESTADO ACTUAL")
+                , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8} }
+                  , [
+                      {label:"Con Venta", val:totDpsConVenta, color:"#4ADE80", bg:"rgba(74,222,128,.12)"},
+                      {label:"Sin Venta", val:totDpsSinVenta, color:"#60A5FA", bg:"rgba(96,165,250,.12)"},
+                      {label:"Pendientes", val:totDpsPendiente, color:"#FBBF24", bg:"rgba(251,191,36,.12)"},
+                      {label:"Rechazadas", val:totDpsRechazado, color:"#F87171", bg:"rgba(248,113,113,.12)"},
+                    ].map(function(kpi){
+                      return React.createElement('div', { key:kpi.label, style:{background:kpi.bg,borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid "+kpi.color.replace(")",", .3)")} }
+                        , React.createElement('div', { style:{fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:kpi.color,lineHeight:1} }, kpi.val)
+                        , React.createElement('div', { style:{fontSize:9,color:"rgba(255,255,255,.5)",textTransform:"uppercase",marginTop:3} }, kpi.label)
+                      );
+                    })
+                )
+                , React.createElement('div', { style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,paddingTop:8,borderTop:"1px solid rgba(99,179,237,.15)"} }
+                  , React.createElement('div', { style:{fontSize:11,color:"rgba(255,255,255,.4)"} }, "Total DPS: "+totDpsTotal)
+                  , React.createElement('div', { style:{fontSize:12,fontWeight:800,color:tasaCierreDPS>=50?"#4ADE80":tasaCierreDPS>=30?"#FBBF24":"#F87171"} },
+                    "Tasa de cierre: "+tasaCierreDPS+"%"
+                  )
+                )
+              )
+
               /* TOP 10 DEL MES — Reconocimiento celebratorio */
               , (function(){
                 try {
@@ -5920,6 +6202,8 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                 )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
                 , supVista==="agentes0"&&React.createElement(AgentesEnCeroView, { equipo: equipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3773}} )
+                , supVista==="dpsreport" && React.createElement(DpsReportView, { equipo:equipo, setEquipo:setEquipo, info:info, R:R, RD:RD })
+                , supVista==="dpsanalisis" && React.createElement(DpsAnalisisView, { equipo:equipo, info:info, R:R, RD:RD })
                 , supVista==="calEjec"&&(
                   React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:26,boxShadow:"0 3px 16px rgba(233,7,41,.07)"} }
                     , React.createElement('div', { style: {fontSize:19,fontWeight:900,color:RD,marginBottom:4} }, "📅 Calendario Ejecutivos")
@@ -5990,6 +6274,9 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                       })()
                   )
                 )
+                , supVista==="dpsreport" && React.createElement(DpsReportView, {
+                    equipo: equipo, setEquipo: setEquipo, info: info, R: R, RD: RD
+                  })
                 , supVista==="gestPremios" && React.createElement(GestPremiosView, {
                     premiosImgs: premiosImgs, setPremiosImgs: setPremiosImgs,
                     info: info, R: R, RD: RD,
@@ -7775,8 +8062,8 @@ function ExcelDataView({ equipo, setEquipo, info }) {
           var nombre = String(fila.nombre||fila.Nombre||fila.NOMBRE||"").trim().toUpperCase();
           var mesKey2 = String(fila.mes||fila.Mes||fila.MES||fila.meskey||fila.MesKey||"").trim();
           var uf = parseFloat(String(fila.uf||fila.UF||fila.Uf||"0").replace(",",".")) || 0;
-          var dps = parseInt(String(fila.dps_total||fila.DPS_TOTAL||fila.dps||fila.DPS||fila.Dps||"0")) || 0;
-          var dpsVenta = parseInt(String(fila.dps_venta||fila.DPS_VENTA||fila.dpsVenta||fila.dpsVenta||"0")) || 0;
+          var dps = parseInt(String(fila.dps_total||fila.DPS_TOTAL||fila["DPS TOTAL"]||fila["dps total"]||fila.dps||fila.DPS||fila.Dps||fila["TOMAR DPS"]||fila["tomar dps"]||fila.tomar_dps||"0").replace(",",".")) || 0;
+          var dpsVenta = parseInt(String(fila.dps_venta||fila.DPS_VENTA||fila["DPS VENTA"]||fila["dps venta"]||fila["DPS CON VENTA"]||fila["dps con venta"]||fila["DPS_CON_VENTA"]||fila.dpsVenta||fila.dpsventa||"0").replace(",",".")) || 0;
           if (!nombre || !mesKey2 || !/^\d{4}-\d{2}$/.test(mesKey2)) return;
           nuevoEquipo.forEach(function(v) {
             // Match flexible: compare palabras del nombre del excel con palabras del ejecutivo
@@ -7851,7 +8138,10 @@ function ExcelDataView({ equipo, setEquipo, info }) {
           });
         }
         setExcelOk(true);
-        setExcelMsg("✅ Cargado correctamente. " + cambios + " registros actualizados. Verifica los datos en la tabla.");
+        // Detect which columns were found for debugging
+        var colsDetectadas = filas.length > 0 ? Object.keys(filas[0]).join(" | ") : "ninguna";
+        var dpsDet = filas.length > 0 ? Object.keys(filas[0]).filter(function(k){return k.toLowerCase().indexOf("dps")>=0;}).join(", ")||"NO ENCONTRADO" : "—";
+        setExcelMsg("✅ "+cambios+" registros actualizados. Columnas detectadas — DPS: ["+dpsDet+"] | Todas: "+colsDetectadas.substring(0,120));
       } catch(err) {
         setExcelMsg("❌ Error al leer el archivo: " + err.message);
       }
