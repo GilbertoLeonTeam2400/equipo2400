@@ -2628,14 +2628,42 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
         var filas = [];
         if (window.XLSX) {
           var wb = window.XLSX.read(ev.target.result, {type:"binary"});
-          // Buscar la pestaña "Resumen Agentes" específicamente
+          // Buscar la pestaña "Resumen Agentes"
           var sheetName = wb.SheetNames.find(function(s){
             return s.toLowerCase().replace(/\s/g,"").indexOf("resumenagente") >= 0 ||
                    s.toLowerCase().replace(/\s/g,"").indexOf("agente") >= 0;
           }) || wb.SheetNames[0];
-          console.log("[DPS] Pestaña usada:", sheetName, "| Disponibles:", wb.SheetNames);
+          console.log("[DPS] Pestaña usada:", sheetName);
           var ws = wb.Sheets[sheetName];
-          filas = window.XLSX.utils.sheet_to_json(ws, {defval:""});
+          // El Excel tiene filas de título fusionadas antes de los encabezados reales
+          // Leer como array para encontrar la fila real de headers (la que tiene "CC" y "NOMBRE EJECUTIVO")
+          var rawArr = window.XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+          var headerRow = -1;
+          for (var ri=0; ri<Math.min(rawArr.length,15); ri++) {
+            var row = rawArr[ri].map(function(c){return String(c).trim().toUpperCase();});
+            if (row.indexOf("CC") >= 0 && (row.indexOf("NOMBRE EJECUTIVO") >= 0 || row.some(function(c){return c.indexOf("NOMBRE")>=0;}))) {
+              headerRow = ri;
+              break;
+            }
+          }
+          if (headerRow < 0) {
+            // Fallback: buscar fila que tenga "CC"
+            for (var ri2=0; ri2<Math.min(rawArr.length,15); ri2++) {
+              var row2 = rawArr[ri2].map(function(c){return String(c).trim().toUpperCase();});
+              if (row2.indexOf("CC") >= 0) { headerRow = ri2; break; }
+            }
+          }
+          if (headerRow < 0) { setMsg("❌ No se encontró la fila de encabezados en la pestaña "+sheetName+". Columnas detectadas: "+rawArr[0].join(", ")); setCargando(false); return; }
+          // Construir objetos usando la fila de headers encontrada
+          var headers = rawArr[headerRow].map(function(c){return String(c).trim();});
+          console.log("[DPS] Headers encontrados en fila "+(headerRow+1)+":", headers);
+          for (var di=headerRow+1; di<rawArr.length; di++) {
+            var dataRow = rawArr[di];
+            if (!dataRow || dataRow.every(function(c){return !c;})) continue;
+            var obj = {};
+            headers.forEach(function(h,j){ obj[h] = dataRow[j] !== undefined ? dataRow[j] : ""; });
+            filas.push(obj);
+          }
         }
         if (!filas.length) { setMsg("❌ No se encontraron datos."); setCargando(false); return; }
 
