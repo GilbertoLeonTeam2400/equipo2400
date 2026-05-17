@@ -2834,7 +2834,7 @@ function DpsAnalisisView({ equipo, setEquipo, info, R, RD }) {
     var h=(v.historial||{})[mesKey]||{};
     return {
       id: v.id, nombre: v.nombre,
-      uf:          parseFloat(h.uf)||0,
+      uf:          parseFloat(h.ufDig)||parseFloat(h.uf)||0,
       dpsConVenta:  parseInt(h.dpsVenta)||0,
       dpsSinVenta:  parseInt(h.dpsSinVenta)||0,
       dpsPendiente: parseInt(h.dpsPendiente)||0,
@@ -2860,7 +2860,7 @@ function DpsAnalisisView({ equipo, setEquipo, info, R, RD }) {
   // Guardar edición en Firebase
   function saveEdit(vid, campo, valor) {
     setGuardando(true);
-    var campoHist = campo==="uf"?"uf":campo==="dpsConVenta"?"dpsVenta":campo==="dpsSinVenta"?"dpsSinVenta":campo==="dpsPendiente"?"dpsPendiente":campo==="dpsRechazado"?"dpsRechazado":campo==="nBenef"?"nBenef":"cttosDig";
+    var campoHist = campo==="uf"?"ufDig":campo==="dpsConVenta"?"dpsVenta":campo==="dpsSinVenta"?"dpsSinVenta":campo==="dpsPendiente"?"dpsPendiente":campo==="dpsRechazado"?"dpsRechazado":campo==="nBenef"?"nBenef":"cttosDig";
     var val = campo==="uf" ? parseFloat(valor)||0 : parseInt(valor)||0;
     var nuevoEquipo = equipo.map(function(v){
       if(v.id !== vid) return v;
@@ -2952,7 +2952,7 @@ function DpsAnalisisView({ equipo, setEquipo, info, R, RD }) {
         ,React.createElement("thead",null
           ,React.createElement("tr",{style:{background:"#F8FAFC",borderBottom:"2px solid #E5E7EB"}}
             ,thSort("nombre","Ejecutivo")
-            ,thSort("uf","💰 UF")
+            ,thSort("uf","💰 UF Dig.")
             ,thSort("dpsConVenta","✅ Con Venta")
             ,thSort("dpsSinVenta","🔵 Sin Venta")
             ,thSort("dpsPendiente","🟡 Pendientes")
@@ -8916,7 +8916,21 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
           // ── Tendencia ──
           var ritmo = info.elapsed > 0 ? ufReal/info.elapsed : 0;
           var proyFin = ritmo * info.wdTotal;
-          var tendTxt = proyFin >= (v.metaUF||ufMeta) ? "↗️ ¡Vas en camino a tu meta!" : proyFin >= (v.metaUF||ufMeta)*0.7 ? "➡️ Ritmo ajustado — accelera esta semana" : "↘️ Hay que acelerar para alcanzar la meta";
+          var tendTxt = proyFin >= (v.metaUF||ufMeta) ? "↗️ ¡Vas en camino a tu meta!" : proyFin >= (v.metaUF||ufMeta)*0.7 ? "➡️ Ritmo ajustado — acelera esta semana" : "↘️ Hay que acelerar para alcanzar la meta";
+          // Mensaje motivacional Card 2 según % logrado
+          var motivCard2 = pct >= 1
+            ? "🏆 ¡META ALCANZADA! ¡"+v.nombre.split(" ")[0]+" eres un CRACK — ahora ve por más! 🌟"
+            : pct >= 0.8
+            ? "🚀 ¡Increíble ritmo! Llevas el "+Math.round(pct*100)+"% — ¡el cierre del mes está al alcance!"
+            : pct >= 0.6
+            ? "💪 ¡Buen avance! "+Math.round(pct*100)+"% logrado — ¡acelera esta semana y llegas!"
+            : pct >= 0.4
+            ? "⚡ Llevas el "+Math.round(pct*100)+"% — aún queda partido, ¡enfócate y cierra fuerte!"
+            : pct >= 0.2
+            ? "🔥 "+Math.round(pct*100)+"% logrado — el mes no ha terminado, ¡cada UF cuenta!"
+            : ufReal > 0
+            ? "⏰ Recién arrancando — ¡cada cierre que hagas hoy cambia el marcador!"
+            : "🎯 Mes en blanco — ¡el primer cierre es el más importante, vamos!";
           var tendColor = proyFin >= (v.metaUF||ufMeta) ? "#4ADE80" : proyFin >= (v.metaUF||ufMeta)*0.7 ? "#FCD34D" : "#FCA5A5";
 
           return React.createElement('div', null
@@ -8983,14 +8997,15 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
                 )
               )
 
-              /* Motivacional */
+              /* Motivacional Card 1 — foco en compromiso, no en logro */
               , siguienteTramo
                 ? React.createElement('div', { style:{background:"rgba(74,222,128,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(74,222,128,.3)"} }
-                  , React.createElement('div', { style:{fontSize:13,fontWeight:900,color:"#4ADE80",marginBottom:4} }, "🚀 ¡Cierra "+fmtUF2(ufFaltan)+" UF más y sube de tramo!")
-                  , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.7)"} }, "Llegarías a $"+siguienteTramo.monto.toLocaleString("es-CL")+" de premio adicional. ¡Vale la pena! 💪")
+                  , React.createElement('div', { style:{fontSize:13,fontWeight:900,color:"#4ADE80",marginBottom:4} }, "🚀 ¡Solo "+fmtUF2(ufFaltan)+" UF más y subes de tramo!")
+                  , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.7)"} }, "Si llegas a "+siguienteTramo.desde+" UF ganarás $"+siguienteTramo.monto.toLocaleString("es-CL")+" de premio. ¡Comprométete con esta meta! 💪")
                 )
                 : premioSim > 0 && React.createElement('div', { style:{background:"rgba(252,211,77,.1)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(252,211,77,.3)",textAlign:"center"} }
-                  , React.createElement('div', { style:{fontSize:14,fontWeight:900,color:"#FCD34D"} }, "🏆 ¡Tramo máximo alcanzado! Sigue así, CRACK 🌟")
+                  , React.createElement('div', { style:{fontSize:14,fontWeight:900,color:"#FCD34D"} }, "🏆 ¡Tu meta te lleva al tramo máximo de premio!")
+                  , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:4} }, "¡Ahora comprométete y ve por ello! Este mes puede ser histórico 🌟")
                 )
             )
 
@@ -9054,7 +9069,8 @@ function CalculadoraGanancias({ equipo, setEquipo, info, premioConecta, nombrePr
 
               /* Texto de incentivo / tendencia */
               , React.createElement('div', { style:{background:"rgba(255,255,255,.07)",borderRadius:12,padding:"14px 16px",border:"1px solid "+card2border} }
-                , React.createElement('div', { style:{fontSize:14,fontWeight:900,color:tendColor,marginBottom:4} }, tendTxt)
+                , React.createElement('div', { style:{fontSize:15,fontWeight:900,color:card2accent,marginBottom:6,lineHeight:1.3} }, motivCard2)
+                , React.createElement('div', { style:{fontSize:12,fontWeight:700,color:tendColor,marginBottom:4} }, tendTxt)
                 , React.createElement('div', { style:{fontSize:12,color:"rgba(255,255,255,.6)"} },
                   info.left > 0
                     ? "Proyección al cierre: "+fmtUF2(proyFin)+" UF — quedan "+info.left+" días hábiles"
