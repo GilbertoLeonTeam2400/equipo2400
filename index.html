@@ -2614,7 +2614,7 @@ function ClasificacionAGVView({ equipo, info, R, RD }) {
 }
 
 // ── Cargar Reporte DPS (supervisor) ──────────────────────────────────────────
-function DpsReportView({ equipo, setEquipo, info, R, RD }) {
+function MetricasReportView({ equipo, setEquipo, info, R, RD }) {
   var [msg, setMsg] = React.useState("");
   var [preview, setPreview] = React.useState([]);
   var [cargando, setCargando] = React.useState(false);
@@ -2686,9 +2686,11 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
           var dpsPendiente = parseInt(String(f["DPS Pendientes"]||f["DPS Pendientes "]||f["DPS Pendiente"]||"0")) || 0;
           var dpsRechazado = parseInt(String(f["Rechazadas"]||f["Rechazada"]||f["Rechaz"]||"0")) || 0;
           var dpsTotal     = parseInt(String(f["Total DPS"]||f["Total DPS "]||"0")) || 0;
-          var uf = parseFloat(String(f["UF  DIG."]||f["UF DIG."]||f["UF Dif"]||f["UF"]||"0").replace(",",".")) || 0;
+          var uf           = parseFloat(String(f["UF  DIG."]||f["UF DIG."]||f["UF Dif"]||f["UF"]||"0").replace(",",".")) || 0;
+          var nBenef       = parseInt(String(f["N° Benef"]||f["N° Benef."]||f["N°Benef"]||"0")) || 0;
+          var cttosDig     = parseInt(String(f["Cttos Dig"]||f["Cttos  Dig"]||f["CttoDig"]||"0")) || 0;
 
-          return { nombre:nombre, dpsConVenta:dpsConVenta, dpsSinVenta:dpsSinVenta, dpsPendiente:dpsPendiente, dpsRechazado:dpsRechazado, dpsTotal:dpsTotal, uf:uf };
+          return { nombre:nombre, dpsConVenta:dpsConVenta, dpsSinVenta:dpsSinVenta, dpsPendiente:dpsPendiente, dpsRechazado:dpsRechazado, dpsTotal:dpsTotal, uf:uf, nBenef:nBenef, cttosDig:cttosDig };
         }).filter(function(f){ return f.nombre.length > 0; });
 
         setPreview(mapeados);
@@ -2721,11 +2723,13 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
       if (!match) return v;
       var hist = Object.assign({}, v.historial||{});
       var mes = Object.assign({uf:0,dps:0,dpsVenta:0,dpsSinVenta:0,dpsPendiente:0,dpsRechazado:0}, hist[mesKey]||{});
-      mes.dpsVenta    = match.dpsConVenta;
+      mes.dpsVenta     = match.dpsConVenta;
       mes.dpsSinVenta  = match.dpsSinVenta;
       mes.dpsPendiente = match.dpsPendiente;
       mes.dpsRechazado = match.dpsRechazado;
       mes.dps = match.dpsTotal || (match.dpsConVenta + match.dpsSinVenta + match.dpsPendiente + match.dpsRechazado);
+      if (match.nBenef > 0)   mes.nBenef   = match.nBenef;
+      if (match.cttosDig > 0) mes.cttosDig = match.cttosDig;
       if (match.uf > 0) mes.uf = match.uf;
       hist[mesKey] = mes;
       return Object.assign({}, v, {historial:hist});
@@ -2741,7 +2745,7 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
   }
 
   return React.createElement('div', {style:{background:"#fff",borderRadius:18,padding:"24px 22px",boxShadow:"0 4px 20px rgba(233,7,41,.09)"}}
-    , React.createElement('div', {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "📊 Cargar Reporte DPS de Administración")
+    , React.createElement('div', {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "📊 Carga Reporte Diario de Métricas de Administración")
     , React.createElement('div', {style:{fontSize:12,color:"#6B7280",marginBottom:16}},
       "Sube el reporte Excel tal como lo recibes de administración. Se filtrará automáticamente CC=2400 y se actualizarán DPS c/venta, sin venta, pendientes y rechazadas del mes "+info.mes+".")
     // Aviso columnas esperadas
@@ -2762,7 +2766,7 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
         , React.createElement('table', {style:{width:"100%",borderCollapse:"collapse",fontSize:12}}
           , React.createElement('thead', null
             , React.createElement('tr', {style:{background:"#F8FAFC"}}
-              , ["Nombre","DPS c/venta","DPS sin venta","Pendientes","Rechazadas","Total DPS","UF"].map(function(h){
+              , ["Nombre","DPS c/venta","DPS sin venta","Pendientes","Rechazadas","Total DPS","UF Dig.","N° Benef","Cttos Dig"].map(function(h){
                   return React.createElement('th',{key:h,style:{padding:"8px 10px",textAlign:"left",fontWeight:700,color:"#6B7280",fontSize:11}},h);
                 })
             )
@@ -2777,6 +2781,8 @@ function DpsReportView({ equipo, setEquipo, info, R, RD }) {
                   , React.createElement('td',{style:{padding:"6px 10px",color:"#DC2626",fontWeight:800,textAlign:"center"}},p.dpsRechazado)
                   , React.createElement('td',{style:{padding:"6px 10px",color:"#374151",textAlign:"center"}},p.dpsTotal)
                   , React.createElement('td',{style:{padding:"6px 10px",color:"#7C3AED",fontWeight:800,textAlign:"center"}},p.uf||"—")
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#0891B2",fontWeight:800,textAlign:"center"}},p.nBenef||"—")
+                  , React.createElement('td',{style:{padding:"6px 10px",color:"#059669",fontWeight:800,textAlign:"center"}},p.cttosDig||"—")
                 );
               })
           )
@@ -2801,8 +2807,19 @@ function DpsAnalisisView({ equipo, info, R, RD }) {
       dpsPendiente: parseInt(h.dpsPendiente)||0,
       dpsRechazado: parseInt(h.dpsRechazado)||0,
       dpsTotal:     (parseInt(h.dpsVenta)||0)+(parseInt(h.dpsSinVenta)||0)+(parseInt(h.dpsPendiente)||0)+(parseInt(h.dpsRechazado)||0),
+      nBenef:       parseInt(h.nBenef)||0,
+      cttosDig:     parseInt(h.cttosDig)||0,
     };
-  }).filter(function(d){ return d.dpsTotal > 0; }).sort(function(a,b){ return b.dpsTotal-a.dpsTotal; });
+  }).filter(function(d){ return d.dpsTotal>0||d.nBenef>0||d.cttosDig>0; }).sort(function(a,b){ return b.dpsTotal-a.dpsTotal; });
+
+  var totConVenta  = datos.reduce(function(s,d){return s+d.dpsConVenta;},0);
+  var totSinVenta  = datos.reduce(function(s,d){return s+d.dpsSinVenta;},0);
+  var totPendiente = datos.reduce(function(s,d){return s+d.dpsPendiente;},0);
+  var totRechazado = datos.reduce(function(s,d){return s+d.dpsRechazado;},0);
+  var totTotal     = totConVenta+totSinVenta+totPendiente+totRechazado;
+  var tasaCierre   = totTotal>0?Math.round((totConVenta/totTotal)*100):0;
+  var totBenef     = datos.reduce(function(s,d){return s+d.nBenef;},0);
+  var totCttos     = datos.reduce(function(s,d){return s+d.cttosDig;},0);
 
   var totConVenta  = datos.reduce(function(s,d){return s+d.dpsConVenta;},0);
   var totSinVenta  = datos.reduce(function(s,d){return s+d.dpsSinVenta;},0);
@@ -2815,13 +2832,12 @@ function DpsAnalisisView({ equipo, info, R, RD }) {
     , React.createElement('div', {style:{fontSize:18,fontWeight:900,color:RD,marginBottom:4}}, "🔵 Análisis DPS — "+info.mes)
     , React.createElement('div', {style:{fontSize:12,color:"#6B7280",marginBottom:20}}, "Solo muestra ejecutivos con datos DPS cargados este mes.")
     // KPI resumen
-    , React.createElement('div', {style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:24}}
+    , React.createElement('div', {style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}
       , [
           {l:"Con Venta",  v:totConVenta,  c:"#16A34A", bg:"#F0FDF4"},
           {l:"Sin Venta",  v:totSinVenta,  c:"#2563EB", bg:"#EFF6FF"},
           {l:"Pendientes", v:totPendiente, c:"#D97706", bg:"#FFFBEB"},
           {l:"Rechazadas", v:totRechazado, c:"#DC2626", bg:"#FFF1F2"},
-          {l:"Tasa cierre",v:tasaCierre+"%",c:tasaCierre>=50?"#16A34A":tasaCierre>=30?"#D97706":"#DC2626",bg:"#F8FAFC"},
         ].map(function(k){
           return React.createElement('div',{key:k.l,style:{background:k.bg,borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #E5E7EB"}}
             , React.createElement('div',{style:{fontSize:22,fontWeight:900,color:k.c}},k.v)
@@ -2829,14 +2845,28 @@ function DpsAnalisisView({ equipo, info, R, RD }) {
           );
         })
     )
+    , React.createElement('div', {style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}
+      , React.createElement('div',{style:{background:"#F0FDFA",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #A7F3D0"}}
+        , React.createElement('div',{style:{fontSize:22,fontWeight:900,color:"#0891B2"}},totBenef)
+        , React.createElement('div',{style:{fontSize:10,color:"#6B7280",textTransform:"uppercase",marginTop:4}},"N° Beneficiarios")
+      )
+      , React.createElement('div',{style:{background:"#F0FDF4",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #86EFAC"}}
+        , React.createElement('div',{style:{fontSize:22,fontWeight:900,color:"#059669"}},totCttos)
+        , React.createElement('div',{style:{fontSize:10,color:"#6B7280",textTransform:"uppercase",marginTop:4}},"Contratos Digitados")
+      )
+      , React.createElement('div',{style:{background:"#F8FAFC",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #E5E7EB"}}
+        , React.createElement('div',{style:{fontSize:22,fontWeight:900,color:tasaCierre>=50?"#16A34A":tasaCierre>=30?"#D97706":"#DC2626"}},tasaCierre+"%")
+        , React.createElement('div',{style:{fontSize:10,color:"#6B7280",textTransform:"uppercase",marginTop:4}},"Tasa Cierre DPS")
+      )
+    )
     // Tabla por ejecutivo
     , datos.length === 0
-      ? React.createElement('div',{style:{textAlign:"center",padding:"40px",color:"#9CA3AF"}},"Sin datos DPS para "+info.mes+". Carga el reporte desde la pestaña 📊 Cargar Reporte DPS.")
+      ? React.createElement('div',{style:{textAlign:"center",padding:"40px",color:"#9CA3AF"}},"Sin datos DPS para "+info.mes+". Carga el reporte desde la pestaña 📊 Carga Reporte Diario de Métricas.")
       : React.createElement('div',{style:{overflowX:"auto"}}
         , React.createElement('table',{style:{width:"100%",borderCollapse:"collapse",fontSize:12}}
           , React.createElement('thead',null
             , React.createElement('tr',{style:{background:"#F8FAFC",borderBottom:"2px solid #E5E7EB"}}
-              , ["Ejecutivo","✅ Con Venta","🔵 Sin Venta","🟡 Pendientes","🔴 Rechazadas","Total","Tasa Cierre"].map(function(h){
+              , ["Ejecutivo","✅ Con Venta","🔵 Sin Venta","🟡 Pendientes","🔴 Rechazadas","Total","Tasa","👥 Benef","📋 Cttos Dig"].map(function(h){
                   return React.createElement('th',{key:h,style:{padding:"10px 12px",textAlign:"left",fontSize:11,color:"#6B7280",fontWeight:700}},h);
                 })
             )
@@ -2854,6 +2884,8 @@ function DpsAnalisisView({ equipo, info, R, RD }) {
                   , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center"}}
                     , React.createElement('span',{style:{background:tasa>=50?"#DCFCE7":tasa>=30?"#FEF9C3":"#FEE2E2",color:tasa>=50?"#16A34A":tasa>=30?"#92400E":"#DC2626",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}},tasa+"%")
                   )
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:700,color:"#0891B2"}},d.nBenef||"—")
+                  , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:700,color:"#059669"}},d.cttosDig||"—")
                 );
               })
             , React.createElement('tr',{style:{borderTop:"3px solid #E5E7EB",background:"#F8FAFC",fontWeight:900}}
@@ -2866,6 +2898,8 @@ function DpsAnalisisView({ equipo, info, R, RD }) {
               , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center"}}
                 , React.createElement('span',{style:{background:tasaCierre>=50?"#DCFCE7":tasaCierre>=30?"#FEF9C3":"#FEE2E2",color:tasaCierre>=50?"#16A34A":tasaCierre>=30?"#92400E":"#DC2626",borderRadius:99,padding:"3px 10px",fontSize:12,fontWeight:900}},tasaCierre+"%")
               )
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#0891B2"}},totBenef)
+              , React.createElement('td',{style:{padding:"10px 12px",textAlign:"center",fontWeight:900,color:"#059669"}},totCttos)
             )
           )
         )
@@ -3677,7 +3711,7 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
   // Map group -> sub-tabs
   const SUP_GRUPOS = {
     dashboard: [["dashboard","📊 Dashboard"],["calEjec","📅 Calendario Ejecutivos"]],
-    equipo:    [["gestion","👥 Gestionar Equipo"],["carga","📥 Cargar UF/DPS"],["editar","✏️ Editar Estadísticas"],["dpsreport","📊 Cargar Reporte DPS"]],
+    equipo:    [["gestion","👥 Gestionar Equipo"],["carga","📥 Cargar UF/DPS"],["editar","✏️ Editar Estadísticas"],["metricas","📊 Carga Reporte Diario de Métricas"]],
     metas:     [["meta","🎯 Meta del Equipo"],["uflineales","📈 UF's Lineales"]],
     contenido: [["gestPremios","🏆 Gestionar Premios"],["gestDocs","📂 Gestionar Docs"],["excel","📂 Carga Excel"]],
     analisis:  [["clasificacion","📊 Clasificación AGV"],["agentes0","🚨 Agentes en 0"],["dpsanalisis","🔵 Análisis DPS"]],
@@ -6211,7 +6245,7 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                 )
                 , supVista==="excel"&&React.createElement(ExcelDataView, { equipo: equipo, setEquipo: setEquipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3772}} )
                 , supVista==="agentes0"&&React.createElement(AgentesEnCeroView, { equipo: equipo, info: info, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3773}} )
-                , supVista==="dpsreport" && React.createElement(DpsReportView, { equipo:equipo, setEquipo:setEquipo, info:info, R:R, RD:RD })
+                , supVista==="metricas" && React.createElement(MetricasReportView, { equipo:equipo, setEquipo:setEquipo, info:info, R:R, RD:RD })
                 , supVista==="dpsanalisis" && React.createElement(DpsAnalisisView, { equipo:equipo, info:info, R:R, RD:RD })
                 , supVista==="calEjec"&&(
                   React.createElement('div', { style: {background:"#fff",borderRadius:18,padding:26,boxShadow:"0 3px 16px rgba(233,7,41,.07)"} }
