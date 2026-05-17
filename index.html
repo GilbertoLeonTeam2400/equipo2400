@@ -3325,6 +3325,15 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
   const [acceso,   setAcceso]   = useState(false);
   const [pinErr,   setPinErr]   = useState(false);
   const [supVista, setSupVista] = useState("dashboard");
+  const [supGrupo, setSupGrupo] = useState("dashboard");
+  // Map group -> sub-tabs
+  const SUP_GRUPOS = {
+    dashboard: [["dashboard","📊 Dashboard"],["calEjec","📅 Calendario Ejecutivos"]],
+    equipo:    [["gestion","👥 Gestionar Equipo"],["carga","📥 Cargar UF/DPS"],["editar","✏️ Editar Estadísticas"]],
+    metas:     [["meta","🎯 Meta del Equipo"],["uflineales","📈 UF's Lineales"]],
+    contenido: [["gestPremios","🏆 Gestionar Premios"],["gestDocs","📂 Gestionar Docs"],["excel","📂 Carga Excel"]],
+    analisis:  [["clasificacion","📊 Clasificación AGV"],["agentes0","🚨 Agentes en 0"]],
+  };
   const [bulk,     setBulk]     = useState({});
   const [bulkOk,   setBulkOk]   = useState(false);
   const [nuevoNom, setNuevoNom] = useState("");
@@ -4078,47 +4087,90 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                 /* 1. CRACKS que ya comenzaron a sumar */
                 , (function(){
                     var cracks = equipo.filter(function(v){return v.uf>0;});
-                    if(cracks.length===0) return React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic",padding:"6px 0"}}, "Aún no hay CRACKS sumando, ¡VAMOS!");
+                    var total = equipo.length;
+                    var pct = total > 0 ? cracks.length/total : 0;
+                    var msg = cracks.length === 0
+                      ? "⏰ ¡El partido acaba de empezar! ¿Quién da el primer golpe?"
+                      : pct < 0.3
+                      ? "🔥 Ya arrancaron los primeros — ¡el resto del equipo está mirando! ¿Vas a quedarte fuera?"
+                      : pct < 0.6
+                      ? "💪 Ya somos "+cracks.length+" sumando — los que faltan tienen el partido en sus manos. ¡TODOS PODEMOS!"
+                      : pct < 0.9
+                      ? "🚀 ¡Casi todo el equipo está en la cancha! Solo faltan "+(total-cracks.length)+" — ¡no se queden mirando!"
+                      : cracks.length === total
+                      ? "🏆 ¡EQUIPO COMPLETO SUMANDO! ¡ASÍ SE HACE, CÓNDORES!"
+                      : "⚡ ¡Increíble! Solo falta"+(total-cracks.length===1?" 1 CRACK":" "+( total-cracks.length)+" CRACKS")+" — ¡el equipo los espera!";
+                    if(cracks.length===0) return React.createElement('div', { style: {background:"rgba(253,224,71,.07)",borderRadius:12,padding:"10px 12px"}},
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🌟 CRACKS que ya comenzaron a sumar!", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracks.length+" de "+total)),
+                      React.createElement('div', { style: {fontSize:11,color:"#FDE047",fontStyle:"italic",fontWeight:700,marginTop:4}}, msg)
+                    );
                     return React.createElement('div', { style: {background:"rgba(253,224,71,.07)",borderRadius:12,padding:"10px 12px"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🌟 CRACKS que ya comenzaron a sumar!", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracks.length)),
-                      React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🌟 CRACKS que ya comenzaron a sumar!", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracks.length+" de "+total)),
+                      React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
                         cracks.map(function(v){
                           var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
                           return React.createElement('span', {key:v.id, style: {background:"rgba(253,224,71,.2)",color:"#FDE047",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}, nombreCorto);
                         })
-                      )
+                      ),
+                      React.createElement('div', { style: {fontSize:11,color:"#FDE047",fontStyle:"italic",fontWeight:700,textAlign:"center",borderTop:"1px solid rgba(253,224,71,.15)",paddingTop:7}}, msg)
                     );
                   })()
 
                 /* 2. SUMA LINEAL — cracks con ≥12 UF */
                 , (function(){
                     var sumaLineal = equipo.filter(function(v){return v.uf>=12;});
+                    var total = equipo.length;
+                    var pct = total > 0 ? sumaLineal.length/total : 0;
+                    var msg = sumaLineal.length === 0
+                      ? "⚡ ¡12 UF es el umbral! ¡El primero que lo cruce jala al resto!"
+                      : pct < 0.3
+                      ? "💥 Solo "+sumaLineal.length+" sobre 12 UF — ¡el equipo necesita más guerreros en la línea!"
+                      : pct < 0.6
+                      ? "📈 Vamos subiendo — "+sumaLineal.length+" aportando fuerte. ¡Los que faltan, ese tramo está al alcance!"
+                      : pct < 0.9
+                      ? "🚀 ¡"+ sumaLineal.length+" ya sobre 12 UF! Casi todo el equipo empuja. ¡Los que faltan, un empujón más!"
+                      : sumaLineal.length === total
+                      ? "🏆 ¡TODO EL EQUIPO SOBRE 12 UF! ¡EQUIPO DE ÉLITE!"
+                      : "🔥 ¡Casi todos sobre 12 UF! Solo "+(total-sumaLineal.length)+" al límite — ¡empujen!";
                     return React.createElement('div', { style: {background:"rgba(134,239,172,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(134,239,172,.2)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(134,239,172,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "⚡ CRACKS que ya aportan en la SUMA LINEAL del TEAM!", React.createElement('span',{style:{background:"rgba(134,239,172,.3)",color:"#86EFAC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},sumaLineal.length)),
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(134,239,172,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "⚡ CRACKS que ya aportan en la SUMA LINEAL del TEAM!", React.createElement('span',{style:{background:"rgba(134,239,172,.3)",color:"#86EFAC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},sumaLineal.length+" de "+total)),
                       sumaLineal.length===0
-                        ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "Aún nadie supera 12 UF — ¡vamos TEAM!")
-                        : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
+                        ? null
+                        : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
                             sumaLineal.map(function(v){
                               var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
                               return React.createElement('span', {key:v.id, style: {background:"rgba(134,239,172,.2)",color:"#86EFAC",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}, nombreCorto + " · " + (function(){var t=Math.floor(v.uf*100)/100;return parseFloat(t.toFixed(2)).toString().replace(".",",");}()) + " UF");
                             })
-                          )
+                          ),
+                      React.createElement('div', { style: {fontSize:11,color:"#86EFAC",fontStyle:"italic",fontWeight:700,textAlign:"center",borderTop:sumaLineal.length>0?"1px solid rgba(134,239,172,.15)":"none",paddingTop:sumaLineal.length>0?7:0}}, msg)
                     );
                   })()
 
                 /* 3. CRACKS ya Comisionando (≥18 UF) */
                 , (function(){
                     var comisionando = equipo.filter(function(v){return v.uf>=18;});
+                    var total = equipo.length;
+                    var pct = total > 0 ? comisionando.length/total : 0;
+                    var msg = comisionando.length === 0
+                      ? "💰 ¡Nadie comisiona aún — 18 UF es el objetivo! ¡AÚN QUEDA PARTIDO Y NADIE SE QUEDA SIN COMISIONAR!"
+                      : pct < 0.3
+                      ? "⚡ Solo "+comisionando.length+" comisionando — ¡el resto tiene todo para llegar! ¡VAMOS CÓNDORES!"
+                      : pct < 0.6
+                      ? "💥 "+comisionando.length+" ya comisionando — ¡el partido está caliente! ¡Los que faltan, esas UF están al alcance!"
+                      : pct < 0.9
+                      ? "🚀 ¡"+comisionando.length+" comisionando! Casi todos en la zona. ¡"+(total-comisionando.length)+" más y el equipo completo!"
+                      : comisionando.length === total
+                      ? "🏆 ¡TODO EL EQUIPO COMISIONANDO! ¡ESTO ES UN EQUIPO DE ÉLITE TOTAL!"
+                      : "🔥 ¡Solo falta"+(total-comisionando.length===1?" 1 CRACK":" "+(total-comisionando.length)+" CRACKS")+" para comisionar! ¡EL EQUIPO LOS ESPERA!";
                     return React.createElement('div', { style: {background:"rgba(56,189,248,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(56,189,248,.2)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"rgba(125,211,252,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "💰 CRACKS ya Comisionando!", React.createElement('span',{style:{background:"rgba(125,211,252,.3)",color:"#7DD3FC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},comisionando.length)),
-                      comisionando.length===0
-                        ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "¡A llegar a las 18 UF y activar la comisión!")
-                        : React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center"}},
-                            comisionando.map(function(v){
-                              var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
-                              return React.createElement('span', {key:v.id, style: {background:"rgba(56,189,248,.2)",color:"#7DD3FC",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}, nombreCorto);
-                            })
-                          )
+                      React.createElement('div', { style: {fontSize:9,color:"rgba(125,211,252,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "💰 CRACKS ya Comisionando!", React.createElement('span',{style:{background:"rgba(125,211,252,.3)",color:"#7DD3FC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},comisionando.length+" de "+total)),
+                      comisionando.length > 0 && React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
+                          comisionando.map(function(v){
+                            var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
+                            return React.createElement('span', {key:v.id, style: {background:"rgba(56,189,248,.2)",color:"#7DD3FC",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}, nombreCorto);
+                          })
+                      ),
+                      React.createElement('div', { style: {fontSize:11,color:"#7DD3FC",fontStyle:"italic",fontWeight:700,textAlign:"center",borderTop:comisionando.length>0?"1px solid rgba(125,211,252,.15)":"none",paddingTop:comisionando.length>0?7:0}}, msg)
                     );
                   })()
 
@@ -4127,16 +4179,25 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                     var hoyStr2 = TODAY;
                     var cracksHoy = equipo.filter(function(v){return (v.rep||[]).some(function(r){return r.fecha===hoyStr2&&(r.uf||0)>0;});});
                     return React.createElement('div', { style: {background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(201,168,76,.35)"}},
-                      React.createElement('div', { style: {fontSize:9,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🔥 CRACKS que sumaron HOY al TEAM!", cracksHoy.length>0&&React.createElement('span',{style:{background:"rgba(201,168,76,.35)",color:"#C9A84C",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracksHoy.length)),
+                      React.createElement('div', { style: {fontSize:9,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🔥 CRACKS que sumaron HOY al TEAM!", cracksHoy.length>0&&React.createElement('span',{style:{background:"rgba(201,168,76,.35)",color:"#C9A84C",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracksHoy.length+" de "+equipo.length)),
                       cracksHoy.length===0
-                        ? React.createElement('div', { style: {fontSize:11,color:"rgba(255,255,255,.4)",fontStyle:"italic"}}, "Hoy aún no hay cierres — ¡sé el primero en sumar!")
+                        ? React.createElement('div', { style: {fontSize:11,color:"#C9A84C",fontStyle:"italic",fontWeight:700}}, "🌅 Hoy el marcador está en cero — ¡el primero que cierre enciende al equipo! ¿QUIÉN ABRE EL PARTIDO?")
                         : React.createElement('div', null,
-                            React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:5}},
+                            React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
                               cracksHoy.map(function(v){
                                 var p = v.nombre.trim().split(/\s+/); var nombreCorto = p.length >= 2 ? p[0] + " " + p[1] : p[0];
                                 var ufHoyV = (v.rep||[]).filter(function(r){return r.fecha===hoyStr2;}).reduce(function(s,r){return s+(r.uf||0);},0);
                                 return React.createElement('span', {key:v.id, style: {background:"rgba(201,168,76,.25)",color:"#C9A84C",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}, "🔥 "+nombreCorto+" +"+(function(){var t=Math.floor(ufHoyV*100)/100;return parseFloat(t.toFixed(2)).toString().replace(".",",");}())+" UF");
                               })
+                            ),
+                            React.createElement('div', { style:{fontSize:11,color:"#C9A84C",fontStyle:"italic",fontWeight:700,textAlign:"center",borderTop:"1px solid rgba(201,168,76,.15)",paddingTop:7}},
+                              cracksHoy.length < Math.ceil(equipo.length*0.3)
+                                ? "⚡ ¡Arrancaron los primeros! El equipo está mirando — ¡a moverse todos!"
+                                : cracksHoy.length < Math.ceil(equipo.length*0.6)
+                                ? "🔥 ¡El día está caliente! Ya "+cracksHoy.length+" sumaron — ¡el resto no puede quedarse afuera!"
+                                : cracksHoy.length < equipo.length
+                                ? "🚀 ¡Casi todo el equipo sumó hoy! Solo faltan "+(equipo.length-cracksHoy.length)+" — ¡VAMOS!"
+                                : "🏆 ¡EQUIPO COMPLETO SUMÓ HOY! ¡DÍA HISTÓRICO CÓNDORES!"
                             )
                           )
                     );
@@ -5382,9 +5443,22 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
               React.createElement('div', {__self: this, __source: {fileName: _jsxFileName, lineNumber: 3668}}
                 , React.createElement('div', { style: {display:"flex",gap:10,marginBottom:22,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3669}}
                   , React.createElement('div', { className:"sup-tabs", style: {display:"flex",gap:10,flexWrap:"wrap"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3670}}
-                    , [["dashboard","📊 Dashboard"],["carga","📥 Cargar UF/DPS Mes en Curso"],["gestion","👥 Gestionar Equipo"],["editar","✏️ Editar Estadísticas de Productividad Individuales"],["calEjec","📅 Calendario Ejecutivos"],["meta","🎯 Meta del Equipo"],["excel","📂 Carga de Datos Excel"],["agentes0","🚨 Agentes en 0"],["uflineales","📈 UF's Lineales"],["gestPremios","🏆 Gestionar Premios"],["gestDocs","📂 Gestionar Docs"],["clasificacion","📊 Clasificación AGV por Resultados"]].map(function(item){
-                      return React.createElement('button', { key: item[0], onClick: function(){if(item[0]==="carga")abrirCarga();else setSupVista(item[0]);}, style: {padding:"10px 18px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,background:supVista===item[0]?R:"#E5E7EB",color:supVista===item[0]?"#fff":"#374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3672}}, item[1]);
+                    , [["dashboard","📊 Dashboard"],["equipo","👥 Equipo"],["metas","🎯 Metas"],["contenido","📂 Contenido"],["analisis","📊 Análisis"]].map(function(item){
+                      return React.createElement('button', { key: item[0], onClick: function(){
+                        setSupGrupo(item[0]);
+                        // Auto-select first sub-tab of group
+                        var subs = SUP_GRUPOS[item[0]];
+                        if(subs && subs.length > 0) setSupVista(subs[0][0]);
+                      }, style: {padding:"10px 18px",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,background:supGrupo===item[0]?R:"#E5E7EB",color:supGrupo===item[0]?"#fff":"#374151"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3672}}, item[1]);
                     })
+                  )
+                  /* Sub-tabs del grupo seleccionado */
+                  , SUP_GRUPOS[supGrupo] && SUP_GRUPOS[supGrupo].length > 1 && React.createElement('div', { className:"sup-tabs", style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:10,paddingTop:10,borderTop:"1px solid #F3F4F6"} }
+                    , SUP_GRUPOS[supGrupo].map(function(item){
+                        return React.createElement('button', { key:item[0], onClick:function(){ if(item[0]==="carga") abrirCarga(); else setSupVista(item[0]); },
+                          style:{padding:"7px 14px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,
+                            background:supVista===item[0]?"#374151":"#F3F4F6",color:supVista===item[0]?"#fff":"#6B7280"} }, item[1]);
+                      })
                   )
                   , React.createElement('div', { className:"btn-row", style: {display:"flex",gap:8,alignItems:"center"}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3675}}
                     , React.createElement('button', { onClick: exportarCSV, style: {background:"#DCFCE7",color:"#15803D",border:"1px solid #86EFAC",borderRadius:10,padding:"8px 16px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700,display:"flex",alignItems:"center",gap:6}, __self: this, __source: {fileName: _jsxFileName, lineNumber: 3676}}, "↓ Exportar CSV")
@@ -7082,15 +7156,14 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
                   background: "#F8FAFC", borderBottom: "2px solid #E5E7EB" };
   var sem_colors = ["#3B82F6","#8B5CF6","#F59E0B","#16A34A"];
 
-  // Semana actual basada en DÍAS HÁBILES completados (no días calendario)
-  // semanasCompletadas: cuántas semanas de 5 días hábiles han terminado completamente
-  // Si estamos en día hábil 11 (viernes semana 3), semanasCompletadas=2
-  // Semáforo evalúa contra la suma de las semanas YA COMPLETADAS (no la actual)
-  var semHoyMetas = Math.min(info.semanasCompletadas, 3); // 0,1,2,3 — semanas completas
-  // Meta acumulada esperada: solo semanas que YA terminaron completas
+  // Semana del mes en curso (1-4) basada en día calendario
+  var hoyDia = new Date().getDate();
+  var semEnCurso = hoyDia <= 7 ? 1 : hoyDia <= 14 ? 2 : hoyDia <= 21 ? 3 : 4;
+  // Semáforo evalúa contra la meta acumulada de semanas 1 hasta la semana EN CURSO (inclusive)
+  var semHoyMetas = semEnCurso; // 1,2,3,4
   function metaAcumEsperada(semanas) {
     var acc = 0;
-    for (var i=0; i<semHoyMetas; i++) acc += (semanas[i]||0); // < no <=
+    for (var i=0; i<semHoyMetas; i++) acc += (semanas[i]||0);
     return acc;
   }
 
@@ -7131,7 +7204,7 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
                 React.createElement('div', { style: { background: ufActualBg, border: ufActualBorder, borderRadius: 8, padding: "5px 8px", fontSize: 12, fontWeight: 900, color: ufActualColor, display: "inline-block", minWidth: 60 } },
                   fmtUF(m.ufActual)+" UF",
                   acumEsp > 0 && React.createElement('div', { style: { fontSize: 9, fontWeight: 600, opacity: .75, marginTop: 2 } },
-                    ufOk ? "✅ meta sem "+(semHoyMetas+1) : "meta: "+acumEsp+" UF"
+                    ufOk ? "✅ sem "+semEnCurso+" ok" : "meta: "+acumEsp+" UF"
                   )
                 )
               ),
