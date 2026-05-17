@@ -4090,16 +4090,16 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                     var total = equipo.length;
                     var pct = total > 0 ? cracks.length/total : 0;
                     var msg = cracks.length === 0
-                      ? "⏰ ¡El partido acaba de empezar! ¿Quién da el primer golpe?"
+                      ? "⏰ ¡El mes acaba de arrancar! ¡Este equipo siempre suma — VAMOS CÓNDORES!"
                       : pct < 0.3
-                      ? "🔥 Ya arrancaron los primeros — ¡el resto del equipo está mirando! ¿Vas a quedarte fuera?"
+                      ? "🌟 ¡Felicitaciones a los primeros en sumar! ¡El resto viene con todo — TÚ PUEDES, VAMOS!"
                       : pct < 0.6
-                      ? "💪 Ya somos "+cracks.length+" sumando — los que faltan tienen el partido en sus manos. ¡TODOS PODEMOS!"
+                      ? "💪 ¡"+cracks.length+" ya sumando, qué equipazo! ¡Los que vienen en camino van a llegar con fuerza — VAMOS!"
                       : pct < 0.9
-                      ? "🚀 ¡Casi todo el equipo está en la cancha! Solo faltan "+(total-cracks.length)+" — ¡no se queden mirando!"
+                      ? "🚀 ¡Qué equipo! Casi todos ya en la cancha. ¡Los que vienen — TÚ PUEDES, EL EQUIPO TE ESPERA CON LOS BRAZOS ABIERTOS!"
                       : cracks.length === total
-                      ? "🏆 ¡EQUIPO COMPLETO SUMANDO! ¡ASÍ SE HACE, CÓNDORES!"
-                      : "⚡ ¡Increíble! Solo falta"+(total-cracks.length===1?" 1 CRACK":" "+( total-cracks.length)+" CRACKS")+" — ¡el equipo los espera!";
+                      ? "🏆 ¡EQUIPO COMPLETO SUMANDO! ¡ASÍ SE HACE, CÓNDORES — ORGULLO TOTAL!"
+                      : "⚡ ¡Increíble nivel de equipo! ¡Los que vienen en camino van a coronar este mes — TÚ PUEDES, VAMOS!";
                     if(cracks.length===0) return React.createElement('div', { style: {background:"rgba(253,224,71,.07)",borderRadius:12,padding:"10px 12px"}},
                       React.createElement('div', { style: {fontSize:9,color:"rgba(253,224,71,.7)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🌟 CRACKS que ya comenzaron a sumar!", React.createElement('span',{style:{background:"rgba(253,224,71,.3)",color:"#FDE047",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracks.length+" de "+total)),
                       React.createElement('div', { style: {fontSize:11,color:"#FDE047",fontStyle:"italic",fontWeight:700,marginTop:4}}, msg)
@@ -4122,16 +4122,16 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                     var total = equipo.length;
                     var pct = total > 0 ? sumaLineal.length/total : 0;
                     var msg = sumaLineal.length === 0
-                      ? "⚡ ¡12 UF es el umbral! ¡El primero que lo cruce jala al resto!"
+                      ? "⚡ ¡12 UF es el objetivo — este equipo lo logra! ¡VAMOS CÓNDORES, CON TODO!"
                       : pct < 0.3
-                      ? "💥 Solo "+sumaLineal.length+" sobre 12 UF — ¡el equipo necesita más guerreros en la línea!"
+                      ? "🌟 ¡Felicitaciones a los primeros sobre 12 UF! ¡El resto viene en camino — TÚ PUEDES, VAMOS CON TODO!"
                       : pct < 0.6
-                      ? "📈 Vamos subiendo — "+sumaLineal.length+" aportando fuerte. ¡Los que faltan, ese tramo está al alcance!"
+                      ? "📈 ¡"+sumaLineal.length+" ya sobre 12 UF, qué ritmo! ¡Los que vienen van a llegar — TÚ PUEDES, VAMOS!"
                       : pct < 0.9
-                      ? "🚀 ¡"+ sumaLineal.length+" ya sobre 12 UF! Casi todo el equipo empuja. ¡Los que faltan, un empujón más!"
+                      ? "🚀 ¡Equipazo! "+sumaLineal.length+" ya aportando fuerte a la suma lineal. ¡Los que vienen con todo — TÚ PUEDES!"
                       : sumaLineal.length === total
-                      ? "🏆 ¡TODO EL EQUIPO SOBRE 12 UF! ¡EQUIPO DE ÉLITE!"
-                      : "🔥 ¡Casi todos sobre 12 UF! Solo "+(total-sumaLineal.length)+" al límite — ¡empujen!";
+                      ? "🏆 ¡TODO EL EQUIPO SOBRE 12 UF! ¡ESTO ES UN EQUIPO DE ÉLITE — ORGULLO TOTAL!"
+                      : "🔥 ¡Nivel altísimo de equipo! ¡Los que vienen en camino van a coronar — VAMOS, TÚ PUEDES!";
                     return React.createElement('div', { style: {background:"rgba(134,239,172,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(134,239,172,.2)"}},
                       React.createElement('div', { style: {fontSize:9,color:"rgba(134,239,172,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "⚡ CRACKS que ya aportan en la SUMA LINEAL del TEAM!", React.createElement('span',{style:{background:"rgba(134,239,172,.3)",color:"#86EFAC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},sumaLineal.length+" de "+total)),
                       sumaLineal.length===0
@@ -4152,16 +4152,16 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                     var total = equipo.length;
                     var pct = total > 0 ? comisionando.length/total : 0;
                     var msg = comisionando.length === 0
-                      ? "💰 ¡Nadie comisiona aún — 18 UF es el objetivo! ¡AÚN QUEDA PARTIDO Y NADIE SE QUEDA SIN COMISIONAR!"
+                      ? "💰 ¡18 UF y activas la comisión — este equipo llega! ¡NADIE SE QUEDA SIN COMISIONAR, VAMOS!"
                       : pct < 0.3
-                      ? "⚡ Solo "+comisionando.length+" comisionando — ¡el resto tiene todo para llegar! ¡VAMOS CÓNDORES!"
+                      ? "🌟 ¡Felicitaciones a los primeros en comisionar! ¡El resto viene con todo — TÚ PUEDES, VAMOS!"
                       : pct < 0.6
-                      ? "💥 "+comisionando.length+" ya comisionando — ¡el partido está caliente! ¡Los que faltan, esas UF están al alcance!"
+                      ? "💥 ¡"+comisionando.length+" ya comisionando — qué equipo! ¡Los que vienen en camino lo van a lograr — TÚ PUEDES!"
                       : pct < 0.9
-                      ? "🚀 ¡"+comisionando.length+" comisionando! Casi todos en la zona. ¡"+(total-comisionando.length)+" más y el equipo completo!"
+                      ? "🚀 ¡Casi todo el equipo comisionando — nivel élite! ¡Los que vienen — TÚ PUEDES, VAMOS CON TODO!"
                       : comisionando.length === total
-                      ? "🏆 ¡TODO EL EQUIPO COMISIONANDO! ¡ESTO ES UN EQUIPO DE ÉLITE TOTAL!"
-                      : "🔥 ¡Solo falta"+(total-comisionando.length===1?" 1 CRACK":" "+(total-comisionando.length)+" CRACKS")+" para comisionar! ¡EL EQUIPO LOS ESPERA!";
+                      ? "🏆 ¡TODO EL EQUIPO COMISIONANDO! ¡ESTO ES UN EQUIPO DE ÉLITE TOTAL — ORGULLO!"
+                      : "🔥 ¡Equipo de altísimo nivel! ¡Los que vienen van a coronar — VAMOS, TÚ PUEDES!";
                     return React.createElement('div', { style: {background:"rgba(56,189,248,.08)",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(56,189,248,.2)"}},
                       React.createElement('div', { style: {fontSize:9,color:"rgba(125,211,252,.9)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "💰 CRACKS ya Comisionando!", React.createElement('span',{style:{background:"rgba(125,211,252,.3)",color:"#7DD3FC",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},comisionando.length+" de "+total)),
                       comisionando.length > 0 && React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
@@ -4181,7 +4181,7 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                     return React.createElement('div', { style: {background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",borderRadius:12,padding:"10px 12px",border:"1px solid rgba(201,168,76,.35)"}},
                       React.createElement('div', { style: {fontSize:9,color:"#C9A84C",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:7,fontWeight:700,display:"flex",alignItems:"center",gap:6}}, "🔥 CRACKS que sumaron HOY al TEAM!", cracksHoy.length>0&&React.createElement('span',{style:{background:"rgba(201,168,76,.35)",color:"#C9A84C",borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:900}},cracksHoy.length+" de "+equipo.length)),
                       cracksHoy.length===0
-                        ? React.createElement('div', { style: {fontSize:11,color:"#C9A84C",fontStyle:"italic",fontWeight:700}}, "🌅 Hoy el marcador está en cero — ¡el primero que cierre enciende al equipo! ¿QUIÉN ABRE EL PARTIDO?")
+                        ? React.createElement('div', { style: {fontSize:11,color:"#C9A84C",fontStyle:"italic",fontWeight:700}}, "🌅 ¡El día está recién comenzando! ¡Este equipo siempre suma — HOY VA A SER UN GRAN DÍA, VAMOS!")
                         : React.createElement('div', null,
                             React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",marginBottom:8}},
                               cracksHoy.map(function(v){
@@ -4192,12 +4192,12 @@ function InfoDocsTab({ info, acceso, infoDocsVista, setInfoDocsVista, premiosImg
                             ),
                             React.createElement('div', { style:{fontSize:11,color:"#C9A84C",fontStyle:"italic",fontWeight:700,textAlign:"center",borderTop:"1px solid rgba(201,168,76,.15)",paddingTop:7}},
                               cracksHoy.length < Math.ceil(equipo.length*0.3)
-                                ? "⚡ ¡Arrancaron los primeros! El equipo está mirando — ¡a moverse todos!"
+                                ? "🌟 ¡Felicitaciones a los primeros en sumar hoy! ¡El resto viene con todo — TÚ PUEDES, VAMOS!"
                                 : cracksHoy.length < Math.ceil(equipo.length*0.6)
-                                ? "🔥 ¡El día está caliente! Ya "+cracksHoy.length+" sumaron — ¡el resto no puede quedarse afuera!"
+                                ? "🔥 ¡El día está caliente! "+cracksHoy.length+" ya sumaron hoy — ¡los que vienen en camino van a llegar, TÚ PUEDES!"
                                 : cracksHoy.length < equipo.length
-                                ? "🚀 ¡Casi todo el equipo sumó hoy! Solo faltan "+(equipo.length-cracksHoy.length)+" — ¡VAMOS!"
-                                : "🏆 ¡EQUIPO COMPLETO SUMÓ HOY! ¡DÍA HISTÓRICO CÓNDORES!"
+                                ? "🚀 ¡Qué día tan potente! Casi todo el equipo sumó hoy — ¡los que vienen lo van a coronar, VAMOS!"
+                                : "🏆 ¡EQUIPO COMPLETO SUMÓ HOY! ¡DÍA HISTÓRICO CÓNDORES — ORGULLO TOTAL!"
                             )
                           )
                     );
@@ -7185,7 +7185,8 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
               return React.createElement('th', { key: si, style: Object.assign({}, thStyle, { color: sem_colors[si], minWidth: 80 }) },
                 "Sem "+(si+1)+" (UF)");
             }),
-            React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900, minWidth: 90, background: "#FFF0F2" }) }, "🏁 META MES")
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: RD, fontWeight: 900, minWidth: 90, background: "#FFF0F2" }) }, "🏁 META MES"),
+            React.createElement('th', { style: Object.assign({}, thStyle, { color: "#7C3AED", fontWeight: 900, minWidth: 90, background: "#F5F3FF" }) }, "🎯 Compromiso")
           )
         ),
         React.createElement('tbody', null,
@@ -7197,6 +7198,10 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
             var ufActualBg = acumEsp === 0 ? "transparent" : ufOk ? "#DCFCE7" : "#FEE2E2";
             var ufActualColor = acumEsp === 0 ? "#374151" : ufOk ? "#15803D" : "#B91C1C";
             var ufActualBorder = acumEsp === 0 ? "none" : ufOk ? "1px solid #86EFAC" : "1px solid #FCA5A5";
+            // Meta propia guardada desde la calculadora
+            var vData = equipo.find(function(e){ return e.id===m.id; });
+            var metaPropia = vData ? (vData.metaPropia||0) : 0;
+            var difMeta = metaPropia > 0 && mes > 0 ? metaPropia - mes : null;
             return React.createElement('tr', { key: m.id, style: { background: bg, borderBottom: "1px solid #F0F4FA" } },
               React.createElement('td', { style: { padding: "10px 12px", fontWeight: 700, color: RD, whiteSpace: "nowrap", fontSize: 12 } },
                 m.nombre),
@@ -7215,6 +7220,17 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
               }),
               React.createElement('td', { style: { padding: "8px 10px", textAlign: "center", background: "#FFF0F2", fontWeight: 900, color: RD, fontSize: 15 } },
                 mes > 0 ? (Math.round(mes * 10)/10)+" UF" : "—"
+              ),
+              React.createElement('td', { style: { padding: "8px 10px", textAlign: "center", background: "#F5F3FF" } },
+                metaPropia > 0
+                  ? React.createElement('div', null
+                    , React.createElement('div', { style: { fontWeight: 900, color: "#7C3AED", fontSize: 14 } }, metaPropia+" UF")
+                    , difMeta !== null && React.createElement('div', { style: { fontSize: 9, fontWeight: 700, marginTop: 2,
+                        color: difMeta > 0 ? "#16A34A" : difMeta < 0 ? "#DC2626" : "#9CA3AF" } },
+                        difMeta > 0 ? "▲ +"+difMeta+" vs tu meta" : difMeta < 0 ? "▼ "+difMeta+" vs tu meta" : "= igual a tu meta"
+                      )
+                  )
+                  : React.createElement('div', { style: { fontSize: 11, color: "#D1D5DB", fontStyle: "italic" } }, "Sin guardar")
               )
             );
           }),
@@ -7229,6 +7245,12 @@ function MetasIndividualesView({ equipo, setEquipo, setMetaEquipo, info }) {
             }),
             React.createElement('td', { style: { padding: "12px 10px", textAlign: "center", fontWeight: 900, color: RD, fontSize: 16, background: "#FFE4E8" } },
               (Math.round(totMes * 10)/10)+" UF"
+            ),
+            React.createElement('td', { style: { padding: "12px 10px", textAlign: "center", fontWeight: 900, color: "#7C3AED", fontSize: 16, background: "#EDE9FE" } },
+              (function(){
+                var totalComp = equipo.reduce(function(s,v){return s+(v.metaPropia||0);},0);
+                return totalComp > 0 ? totalComp+" UF" : "—";
+              })()
             )
           )
         )
